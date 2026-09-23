@@ -1,0 +1,1 @@
+-- Historical only: migration 002 replaces invitations with email/password registration.

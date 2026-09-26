@@ -1,5 +1,10 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { tabForPath, tabRoutes, type AppTab } from '@/lib/routes';
+import { previousSession } from '@/lib/training';
+import { RestTimer, useRestTimer } from '@/components/rest-timer';
 import { programProgress, progressPrograms } from "@/lib/progress";
 import { browserClient } from "@/lib/supabase/client";
 import { registerSummary } from "@/lib/webmcp";
@@ -45,7 +50,7 @@ const dateLabel = (s: string) =>
   new Date(s).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 const localDay = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-type Tab = "Beranda" | "Latihan" | "Progress" | "Profil";
+type Tab = AppTab;
 function download(data: Data) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
@@ -68,7 +73,14 @@ export default function Tracker({
   email: string;
 }) {
   const [data, setData] = useState<Data>(emptyData);
-  const [tab, setTab] = useState<Tab>("Beranda");
+  const [demoTab, setDemoTab] = useState<Tab>('Beranda');
+  const pathname = usePathname();
+  const router = useRouter();
+  const tab = demo ? demoTab : tabForPath(pathname);
+  function setTab(next: Tab) {
+    if (demo) setDemoTab(next);
+    else router.push(tabRoutes[next]);
+  }
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [tab]);
@@ -230,6 +242,7 @@ export default function Tracker({
     { label: "Beranda", icon: Home },
     { label: "Latihan", icon: Dumbbell },
     { label: "Progress", icon: TrendingUp },
+    { label: "Riwayat", icon: Layers },
     { label: "Profil", icon: User },
   ] as const;
   if (!ready)
@@ -255,15 +268,17 @@ export default function Tracker({
         <p className="nav-caption">RUANG LATIHAN</p>
         <nav>
           {nav.map(({ label, icon: Icon }) => (
-            <button
+            <Link
               key={label}
+              href={demo ? '/demo' : tabRoutes[label]}
+              aria-current={tab === label ? 'page' : undefined}
               className={tab === label ? "nav-item active" : "nav-item"}
-              onClick={() => setTab(label)}
+              onClick={event => { if (demo) { event.preventDefault(); setDemoTab(label); } }}
             >
               <Icon size={20} />
               <span>{label}</span>
               {tab === label && <span className="nav-dot" />}
-            </button>
+            </Link>
           ))}
         </nav>
         <div className="side-note">
@@ -288,20 +303,6 @@ export default function Tracker({
         </div>
       </aside>
       <div className="main-shell">
-        <header className="topbar">
-          <span className="breadcrumb">
-            Ruang latihan <ChevronRight size={14} /> <b>{tab}</b>
-          </span>
-          <div className="top-meta">
-            <span className="save-state">
-              <span />
-              {status}
-            </span>
-            <span className="avatar small">
-              {name.slice(0, 1).toUpperCase()}
-            </span>
-          </div>
-        </header>
         <main className="content">
           {demo && (
             <div className="demo-banner">
@@ -353,7 +354,7 @@ export default function Tracker({
                         ? "MAKE EVERY REP COUNT"
                         : tab === "Progress"
                           ? "SMALL STEPS. REAL PROGRESS."
-                          : "YOUR PERSONAL SPACE"}
+                          : tab === 'Riwayat' ? 'EVERY SESSION COUNTS' : "YOUR PERSONAL SPACE"}
                   </div>
                   <h1>
                     {tab === "Beranda"
@@ -362,7 +363,7 @@ export default function Tracker({
                         ? "Waktunya latihan."
                         : tab === "Progress"
                           ? "Lihat sejauh apa kamu melangkah."
-                          : "Ruangmu, caramu."}
+                          : tab === 'Riwayat' ? 'Setiap sesi punya cerita.' : "Ruangmu, caramu."}
                   </h1>
                   <p>
                     {tab === "Beranda"
@@ -371,7 +372,7 @@ export default function Tracker({
                         ? "Pilih sesi, catat set, dan lanjutkan progressmu."
                         : tab === "Progress"
                           ? "Bandingkan gerakan yang sama dari sesi ke sesi."
-                          : "Sesuaikan jadwal dan kelola catatan pribadimu."}
+                          : tab === 'Riwayat' ? 'Buka kembali, edit, dan kelola latihan yang sudah selesai.' : "Sesuaikan jadwal dan kelola catatan pribadimu."}
                   </p>
                 </div>
                 <span className="date-pill">
@@ -609,6 +610,7 @@ export default function Tracker({
               {tab === "Latihan" &&
                 (data.draft ? (
                   <WorkoutEditor
+                    key={data.draft.id}
                     workout={data.draft}
                     history={recent.filter((s) => s.id !== data.draft?.id)}
                     onChange={updateDraft}
@@ -668,8 +670,9 @@ export default function Tracker({
                     ))}
                   </div>
                 ))}
-              {tab === "Progress" && (
+              {(tab === "Progress" || tab === "Riwayat") && (
                 <Progress
+                  historyOnly={tab === 'Riwayat'}
                   data={data}
                   onEdit={(w) => {
                     if (data.draft) {
@@ -705,6 +708,10 @@ export default function Tracker({
             </>
           )}
           <footer className="footer">
+            <span className="save-state" role="status">
+              <span />
+              {status}
+            </span>
             <span>
               REPLOG <span className="muted">/ BUILT ONE REP AT A TIME</span>
             </span>
@@ -757,6 +764,8 @@ function WorkoutEditor({
   onDiscard: () => void;
 }) {
   const [message, setMessage] = useState("");
+  const timer = useRestTimer(w.id);
+  const previous = previousSession(history, w);
   function setAt(
     ei: number,
     si: number,
@@ -778,6 +787,7 @@ function WorkoutEditor({
         );
         return;
       }
+      if (value && !set.done) timer.start(`${next.exercises[ei].exercise.name} · set ${si + 1}`);
       set.done = Boolean(value);
     } else {
       set[field] = String(value);
@@ -804,11 +814,11 @@ function WorkoutEditor({
             {message}
           </p>
         )}
+        <RestTimer timer={timer} />
+        <div className="previous-session panel"><Activity size={20}/><div><strong>{previous ? `Acuan ${previous.name} terakhir · ${new Date(previous.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}` : `Sesi ${w.name} pertamamu`}</strong><p>{previous ? 'Beban dan repetisi set yang selesai ditampilkan di setiap gerakan. Gunakan sebagai acuan, lalu isi hasil latihan hari ini.' : 'Belum ada sesi sebelumnya. Catatan hari ini akan menjadi acuan latihan berikutnya.'}</p></div></div>
         {w.exercises.map((item, ei) => {
           const e = item.exercise;
-          const last = history
-            .flatMap((h) => h.exercises)
-            .find((h) => exerciseKey(h.exercise) === exerciseKey(e));
+          const last = previous?.exercises.find(h => exerciseKey(h.exercise) === exerciseKey(e));
           return (
             <section className="panel exercise-card" key={ei}>
               <div className="exercise-head">
@@ -861,11 +871,11 @@ function WorkoutEditor({
               <div className="previous">
                 <Activity size={15} />
                 <span>
-                  Sebelumnya:{" "}
+                  Sesi sebelumnya:{" "}
                   {last
                     ? last.sets
-                        .filter((s) => s.done)
-                        .map((s) => `${s.kg} kg × ${s.reps}`)
+                        .map((s, i) => s.done ? `Set ${i + 1}: ${s.kg} kg × ${s.reps} rep` : null)
+                        .filter(Boolean)
                         .join(" · ") || "Belum ada set selesai"
                     : "Belum ada catatan"}
                 </span>
@@ -993,7 +1003,7 @@ function WorkoutEditor({
         <p className="hint">
           Tandai set yang selesai. Grafik hanya menghitung set yang ditandai.
         </p>
-        <button className="primary" onClick={onFinish}>
+        <button className="primary" onClick={() => { if (completedSets(w)) timer.clear(); onFinish(); }}>
           <Check size={18} /> Selesaikan latihan
         </button>
         <button className="text-button danger" onClick={onDiscard}>
@@ -1009,10 +1019,12 @@ function WorkoutEditor({
 }
 function Progress({
   data,
+  historyOnly = false,
   onEdit,
   onDelete,
 }: {
   data: Data;
+  historyOnly?: boolean;
   onEdit: (w: Workout) => void;
   onDelete: (id: string) => void;
 }) {
@@ -1022,7 +1034,7 @@ function Progress({
   const charts = programProgress(data, programId);
   return (
     <>
-      <section className="panel chart-panel">
+      {!historyOnly && <section className="panel chart-panel">
         <div className="section-title">
           <div>
             <span className="eyebrow">PERKEMBANGAN BEBAN</span>
@@ -1052,8 +1064,8 @@ function Progress({
             </article>
           ))}
         </div>
-      </section>
-      <section className="panel section-block">
+      </section>}
+      {historyOnly && <section className="panel section-block">
         <div className="section-title">
           <h2>Riwayat latihan</h2>
           <span className="tag">{data.sessions.length} sesi</span>
@@ -1116,7 +1128,7 @@ function Progress({
             </p>
           </div>
         )}
-      </section>
+      </section>}
     </>
   );
 }

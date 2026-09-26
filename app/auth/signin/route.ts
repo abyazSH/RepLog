@@ -44,6 +44,6 @@ export async function POST(request:Request){
  }
  const permission=await supabase.rpc('replog_is_allowed');
  if(permission.error||permission.data!==true){await supabase.auth.signOut({scope:'local'});return go('/login?error=access');}
- return go('/');
+ return go('/dashboard');
  }catch{return go('/login?error=network');}
 }

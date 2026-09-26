@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && (await authorizedUser()))
-      return NextResponse.redirect(appOrigin() + "/");
+      return NextResponse.redirect(appOrigin() + "/dashboard");
   }
   await supabase.auth.signOut({ scope: "local" });
   return NextResponse.redirect(appOrigin() + "/login?error=access");

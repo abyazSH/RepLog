@@ -2,8 +2,17 @@
 React/Next.js gym tracker, Supabase PostgreSQL + email/password Auth, deploy to Vercel.
 
 ## Local
-Run npm install, then npm run dev. Open http://127.0.0.1:3000/login or /demo.
+Run npm install, then npm run dev. Open http://127.0.0.1:3000 for the public introduction page.
 Demo localStorage and existing workout history are preserved; demo records are not uploaded automatically.
+
+## Pages
+Active workouts include an automatic rest timer (30 seconds to 5 minutes) with pause/resume and skip. Duration is stored on the device; the current timer is restored in the same tab after navigation or refresh using its deadline. Completion is a visual notification, without background system notifications. Previous-session references use the last completed session of the same program before the active workout and match exercise variants by name.
+- `/`: public RepLog introduction, features, register/login links, and a clearly labelled illustrative workout.
+- `/login` and `/register`: separate authentication pages. Successful login goes to `/dashboard`.
+- `/dashboard`, `/workouts`, `/progress`, `/history`, `/profile`: authenticated application routes.
+- `/demo`: local demo using browser storage.
+Training pages share a persistent layout so in-memory drafts and pending autosaves survive menu navigation. Refresh and browser Back/Forward select the page from its URL. The public home page remains public even when logged in.
+Authentication and online workout storage use the browser Supabase client; database RLS and storage RPC enforce ownership. Do not remove those database protections.
 
 ## Database setup
 - Existing project with 001 already applied: run ONLY supabase/migrations/002_email_password.sql.

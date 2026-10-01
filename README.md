@@ -38,3 +38,9 @@ Import this folder as Next.js; add the three environment variables above using t
 npm test
 npm run build
 Test real registration, confirmation, incorrect password, logout, and two-account isolation after configuring Supabase. Database tests use PGlite with a simulated Auth schema and execute both migrations.
+
+## Latest interface updates
+- Rest timer stays inside the active workout on `/workouts`; `/demo/timer` is only an isolated preview.
+- Change Indonesian/English only in Profile > Preferences. The language applies throughout the site and is saved per device.
+- Completed sessions offer a PNG share card from History or immediately after finishing. Story and square formats are supported. Sharing uses the device share menu when available, otherwise download. No private notes, email, or body weight are included.
+- Run `npm run verify` before deploying. See [DEPLOYMENT.md](./DEPLOYMENT.md) for the existing Vercel project settings.

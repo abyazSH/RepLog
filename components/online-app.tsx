@@ -1,9 +1,12 @@
 "use client";
+import { useLanguage } from '@/components/language';
 import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import Tracker from "@/components/tracker";
 type Identity = { name: string; email: string };
 export default function OnlineApp() {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [message, setMessage] = useState("Memeriksa sesi login…");
   useEffect(() => {
@@ -24,5 +27,5 @@ export default function OnlineApp() {
     return () => { active = false; };
   }, []);
   if (identity) return <Tracker demo={false} direct name={identity.name} email={identity.email} />;
-  return <main className="login"><div className="login-card"><div className="brand">rep<span>log</span></div><h1>{message}</h1><p>Mohon tunggu…</p></div></main>;
+  return <main className="login"><div className="login-card"><div className="brand">{tr("rep")}<span>{tr("log")}</span></div><h1>{tr(message)}</h1><p>{tr("Mohon tunggu…")}</p></div></main>;
 }

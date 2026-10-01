@@ -1,4 +1,6 @@
 "use client";
+import ShareCard from '@/components/share-card';
+import { useLanguage, LanguagePicker } from '@/components/language';
 import { useEffect, useId, useRef, useState } from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -43,11 +45,6 @@ import {
   type Workout,
   type Exercise,
 } from "@/lib/model";
-const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-const fmt = (n: number) =>
-  new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(n);
-const dateLabel = (s: string) =>
-  new Date(s).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 const localDay = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 type Tab = AppTab;
@@ -72,6 +69,9 @@ export default function Tracker({
   name: string;
   email: string;
 }) {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
+  const [sharing,setSharing] = useState<{workout:Workout;sample?:boolean}|null>(null);
   const [data, setData] = useState<Data>(emptyData);
   const [demoTab, setDemoTab] = useState<Tab>('Beranda');
   const pathname = usePathname();
@@ -249,23 +249,23 @@ export default function Tracker({
     return (
       <main className="loading">
         <Dumbbell />
-        <p>Menyiapkan ruang latihanmu…</p>
+        <p>{tr("Menyiapkan ruang latihanmu…")}</p>
       </main>
     );
   return (
     <div className="app-shell">
+      {sharing && <ShareCard workout={sharing.workout} sample={sharing.sample} onClose={()=>setSharing(null)}/>}
       <aside className="sidebar">
         <a
           className="brand"
           href={demo ? "/demo" : "/"}
-          aria-label="RepLog beranda"
+          aria-label={tr("RepLog beranda")}
         >
           <span className="brand-mark">
             <Dumbbell />
-          </span>
-          rep<span>log</span>
+          </span>{tr(" rep")}<span>{tr("log")}</span>
         </a>
-        <p className="nav-caption">RUANG LATIHAN</p>
+        <p className="nav-caption">{tr("RUANG LATIHAN")}</p>
         <nav>
           {nav.map(({ label, icon: Icon }) => (
             <Link
@@ -276,7 +276,7 @@ export default function Tracker({
               onClick={event => { if (demo) { event.preventDefault(); setDemoTab(label); } }}
             >
               <Icon size={20} />
-              <span>{label}</span>
+              <span>{tr(label)}</span>
               {tab === label && <span className="nav-dot" />}
             </Link>
           ))}
@@ -285,19 +285,15 @@ export default function Tracker({
           <div className="mini-icon">
             <Target size={20} />
           </div>
-          <strong>Satu set lebih dekat.</strong>
-          <p>
-            Catat usahamu.
-            <br />
-            Bangun konsistensimu.
-          </p>
-          <span>YOUR PACE. YOUR PROGRESS.</span>
+          <strong>{tr("Satu set lebih dekat.")}</strong>
+          <p>{tr(" Catat usahamu. ")}<br />{tr(" Bangun konsistensimu. ")}</p>
+          <span>{tr("YOUR PACE. YOUR PROGRESS.")}</span>
         </div>
         <div className="side-user">
-          <div className="avatar">{name.slice(0, 1).toUpperCase()}</div>
+          <div className="avatar">{tr(name.slice(0, 1).toUpperCase())}</div>
           <div>
-            <strong>{name.split(" ")[0]}</strong>
-            <small>{demo ? "Mode pratinjau" : "Akun pribadi"}</small>
+            <strong>{tr(name.split(" ")[0])}</strong>
+            <small>{tr(demo ? "Mode pratinjau" : "Akun pribadi")}</small>
           </div>
           <ShieldCheck size={18} />
         </div>
@@ -305,82 +301,74 @@ export default function Tracker({
       <div className="main-shell">
         <main className="content">
           {demo && (
-            <div className="demo-banner">
+            <div className="demo-banner"><button type="button" className="text-button" onClick={()=>{const sample=newWorkout(data.templates[1] || data.templates[0]); sample.finished=true; sample.exercises=sample.exercises.map(e=>({...e,sets:e.sets.map(()=>({kg:'20',reps:'10',done:true}))}));setSharing({workout:sample,sample:true});}}>{locale==='en-US'?'Preview share card':'Contoh kartu berbagi'}</button>
               <span>
-                <b>Mode pratinjau</b> · Catatan di sini tersimpan hanya di
-                browser ini.
-              </span>
-              <a href="/login">
-                Login online <ArrowUpRight size={14} />
+                <b>{tr("Mode pratinjau")}</b>{tr(" · Catatan di sini tersimpan hanya di browser ini. ")}</span>
+              <a href="/login">{tr(" Login online ")}<ArrowUpRight size={14} />
               </a>
             </div>
           )}
-          {error && (
+          {tr(error && (
             <div className="error" role="alert">
-              {error}
+              {tr(error)}
               <div className="button-row">
                 {loaded && !conflict.current && (
                   <button
                     className="secondary"
                     onClick={() => setRetry((x) => x + 1)}
-                  >
-                    Coba simpan lagi
-                  </button>
+                  >{tr(" Coba simpan lagi ")}</button>
                 )}
                 {loaded && (
-                  <button className="secondary" onClick={() => download(data)}>
-                    Ekspor cadangan
-                  </button>
+                  <button className="secondary" onClick={() => download(data)}>{tr(" Ekspor cadangan ")}</button>
                 )}
                 <button
                   className="secondary"
                   onClick={() => window.location.reload()}
-                >
-                  Muat ulang
-                </button>
+                >{tr(" Muat ulang ")}</button>
               </div>
             </div>
-          )}
+          ))}
           {!loaded ? (
-            <p>Catatan belum dimuat. Muat ulang untuk mencoba kembali.</p>
+            <p>{tr("Catatan belum dimuat. Muat ulang untuk mencoba kembali.")}</p>
           ) : (
             <>
+
               <div className="page-heading">
                 <div>
                   <div className="eyebrow">
-                    {tab === "Beranda"
+                    {tr(tab === "Beranda"
                       ? "LET’S SHOW UP"
                       : tab === "Latihan"
                         ? "MAKE EVERY REP COUNT"
                         : tab === "Progress"
                           ? "SMALL STEPS. REAL PROGRESS."
-                          : tab === 'Riwayat' ? 'EVERY SESSION COUNTS' : "YOUR PERSONAL SPACE"}
+                          : tab === 'Riwayat' ? 'EVERY SESSION COUNTS' : "YOUR PERSONAL SPACE")}
                   </div>
                   <h1>
-                    {tab === "Beranda"
+                    {tr(tab === "Beranda"
                       ? `Siap untuk set berikutnya${name === "Atlet" ? "" : `, ${name.split(" ")[0]}`}?`
                       : tab === "Latihan"
                         ? "Waktunya latihan."
                         : tab === "Progress"
                           ? "Lihat sejauh apa kamu melangkah."
-                          : tab === 'Riwayat' ? 'Setiap sesi punya cerita.' : "Ruangmu, caramu."}
+                          : tab === 'Riwayat' ? 'Setiap sesi punya cerita.' : "Ruangmu, caramu.")}
                   </h1>
                   <p>
-                    {tab === "Beranda"
+                    {tr(tab === "Beranda"
                       ? "Sedikit lebih kuat. Sedikit lebih konsisten. Setiap sesi berarti."
                       : tab === "Latihan"
                         ? "Pilih sesi, catat set, dan lanjutkan progressmu."
                         : tab === "Progress"
                           ? "Bandingkan gerakan yang sama dari sesi ke sesi."
-                          : tab === 'Riwayat' ? 'Buka kembali, edit, dan kelola latihan yang sudah selesai.' : "Sesuaikan jadwal dan kelola catatan pribadimu."}
+                          : tab === 'Riwayat' ? 'Buka kembali, edit, dan kelola latihan yang sudah selesai.' : "Sesuaikan jadwal dan kelola catatan pribadimu.")}
                   </p>
                 </div>
                 <span className="date-pill">
-                  {now.toLocaleDateString("id-ID", {
+                  {tr(now.toLocaleDateString(locale, {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
-                  })}
+                  }))}
                 </span>
               </div>
               {tab === "Beranda" && (
@@ -419,34 +407,32 @@ export default function Tracker({
                     <section className="today-card">
                       <div className="card-top">
                         <span className="eyebrow">
-                          {data.draft ? "LANJUTKAN SESIMU" : "SESI HARI INI"}
+                          {tr(data.draft ? "LANJUTKAN SESIMU" : "SESI HARI INI")}
                         </span>
-                        <span className="tag">{days[now.getDay()]}</span>
+                        <span className="tag">{tr(days[now.getDay()])}</span>
                       </div>
                       <h2>
-                        {data.draft?.name ??
+                        {tr(data.draft?.name ??
                           scheduled?.name ??
-                          "Rest & recover"}
+                          "Rest & recover")}
                       </h2>
                       <p>
-                        {activeTemplate?.focus ??
-                          "Beri ruang untuk istirahat. Sesi lain tetap bisa kamu pilih."}
+                        {tr(activeTemplate?.focus ??
+                          "Beri ruang untuk istirahat. Sesi lain tetap bisa kamu pilih.")}
                       </p>
                       <div className="session-meta">
                         <span>
                           <Dumbbell size={17} />
                           {data.draft?.exercises.length ??
                             scheduled?.exercises.length ??
-                            0}{" "}
-                          gerakan
-                        </span>
+                            0}{tr(" ")}{tr(" gerakan ")}</span>
                         <span>
                           <Target size={17} />
-                          {data.draft
+                          {tr(data.draft
                             ? "Draf tersimpan"
                             : scheduled
                               ? "Sesuai jadwalmu"
-                              : "Hari istirahat"}
+                              : "Hari istirahat")}
                         </span>
                       </div>
                       <button
@@ -459,15 +445,15 @@ export default function Tracker({
                               : setTab("Latihan")
                         }
                       >
-                        {data.draft
+                        {tr(data.draft
                           ? "Lanjutkan latihan"
                           : scheduled
                             ? "Mulai latihan"
-                            : "Pilih sesi latihan"}
+                            : "Pilih sesi latihan")}
                         <ArrowRight size={19} />
                       </button>
                       <div className="big-number" aria-hidden="true">
-                        {data.draft
+                        {tr(data.draft
                           ? "GO"
                           : scheduled?.name === "Push"
                             ? "02"
@@ -475,13 +461,13 @@ export default function Tracker({
                               ? "01"
                               : scheduled?.name === "Legs"
                                 ? "03"
-                                : "↗"}
+                                : "↗")}
                       </div>
                     </section>
                     <section className="panel week-panel">
                       <div className="section-title">
-                        <h2>Ritme minggu ini</h2>
-                        <span className="muted">{week.length} sesi</span>
+                        <h2>{tr("Ritme minggu ini")}</h2>
+                        <span className="muted">{week.length}{tr(" sesi")}</span>
                       </div>
                       <div className="week-days">
                         {[1, 2, 3, 4, 5, 6, 0].map((day, i) => {
@@ -498,7 +484,7 @@ export default function Tracker({
                                 day === now.getDay() ? "day current" : "day"
                               }
                             >
-                              <span>{days[day].slice(0, 3)}</span>
+                              <span>{tr(days[day].slice(0, 3))}</span>
                               <b
                                 className={
                                   done ? "day-circle done" : "day-circle"
@@ -507,33 +493,29 @@ export default function Tracker({
                                 {done ? <Check size={17} /> : dayDate.getDate()}
                               </b>
                               <small>
-                                {data.templates.some((t) => t.day === day)
+                                {tr(data.templates.some((t) => t.day === day)
                                   ? "Latihan"
-                                  : "Rest"}
+                                  : "Rest")}
                               </small>
                             </div>
                           );
                         })}
                       </div>
                       <div className="week-footer">
-                        <span className="legend-dot" /> Latihan selesai{" "}
-                        <span className="muted">
-                          Konsistensi dimulai dari hadir.
-                        </span>
+                        <span className="legend-dot" />{tr(" Latihan selesai")}{tr(" ")}
+                        <span className="muted">{tr(" Konsistensi dimulai dari hadir. ")}</span>
                       </div>
                     </section>
                   </div>
                   <section className="section-block">
                     <div className="section-title">
-                      <h2>
-                        Program latihanmu{" "}
+                      <h2>{tr(" Program latihanmu")}{tr(" ")}
                         <span className="count">{data.templates.length}</span>
                       </h2>
                       <button
                         className="text-button"
                         onClick={() => setTab("Latihan")}
-                      >
-                        Lihat semua <ArrowUpRight size={16} />
+                      >{tr(" Lihat semua ")}<ArrowUpRight size={16} />
                       </button>
                     </div>
                     <div className="program-grid">
@@ -546,10 +528,10 @@ export default function Tracker({
                           <span className="program-index">
                             0{i + 1} <ArrowUpRight size={17} />
                           </span>
-                          <span className="program-day">{days[t.day]}</span>
+                          <span className="program-day">{tr(days[t.day])}</span>
                           <strong>{t.name}</strong>
                           <span className="muted">
-                            {t.exercises.length} gerakan · {t.focus}
+                            {t.exercises.length}{tr(" gerakan · ")}{tr(t.focus)}
                           </span>
                         </button>
                       ))}
@@ -557,12 +539,11 @@ export default function Tracker({
                   </section>
                   <section className="panel">
                     <div className="section-title">
-                      <h2>Latihan terakhir</h2>
+                      <h2>{tr("Latihan terakhir")}</h2>
                       <button
                         className="text-button"
                         onClick={() => setTab("Progress")}
-                      >
-                        Riwayat lengkap <ArrowRight size={16} />
+                      >{tr(" Riwayat lengkap ")}<ArrowRight size={16} />
                       </button>
                     </div>
                     {recent.length ? (
@@ -574,12 +555,10 @@ export default function Tracker({
                           <div>
                             <strong>{w.name}</strong>
                             <small>
-                              {dateLabel(w.date)} · {completedSets(w)} set
-                              selesai
-                            </small>
+                              {tr(dateLabel(w.date))} · {completedSets(w)}{tr(" set selesai ")}</small>
                           </div>
                           <b>
-                            {fmt(volume(w))} <small>kg volume</small>
+                            {tr(fmt(volume(w)))} <small>{tr("kg volume")}</small>
                           </b>
                           <Check size={18} className="lime" />
                         </div>
@@ -590,17 +569,13 @@ export default function Tracker({
                           <Dumbbell size={22} />
                         </span>
                         <div>
-                          <strong>Halaman baru untuk progressmu.</strong>
-                          <p>
-                            Selesaikan sesi pertama untuk melihat riwayat di
-                            sini.
-                          </p>
+                          <strong>{tr("Halaman baru untuk progressmu.")}</strong>
+                          <p>{tr(" Selesaikan sesi pertama untuk melihat riwayat di sini. ")}</p>
                         </div>
                         <button
                           className="secondary"
                           onClick={() => setTab("Latihan")}
-                        >
-                          Mulai sesi <ArrowRight size={16} />
+                        >{tr(" Mulai sesi ")}<ArrowRight size={16} />
                         </button>
                       </div>
                     )}
@@ -630,10 +605,11 @@ export default function Tracker({
                           ...d.sessions.filter((s) => s.id !== w.id),
                         ],
                       }));
-                      setTab("Progress");
+                      setSharing({workout:{...w,finished:true}});
+                      setTab("Riwayat");
                     }}
                     onDiscard={() => {
-                      if (confirm("Hapus draf latihan ini?"))
+                      if (confirm(tr("Hapus draf latihan ini?")))
                         setData((d) => ({ ...d, draft: null }));
                     }}
                   />
@@ -644,13 +620,12 @@ export default function Tracker({
                         <div className="section-title">
                           <div>
                             <span className="eyebrow">
-                              {days[t.day]} / 0{i + 1}
+                              {tr(days[t.day])} / 0{i + 1}
                             </span>
                             <h2>{t.name}</h2>
-                            <p>{t.focus}</p>
+                            <p>{tr(t.focus)}</p>
                           </div>
-                          <button className="primary" onClick={() => start(t)}>
-                            Mulai <ArrowRight size={17} />
+                          <button className="primary" onClick={() => start(t)}>{tr(" Mulai ")}<ArrowRight size={17} />
                           </button>
                         </div>
                         <div className="exercise-preview">
@@ -658,9 +633,9 @@ export default function Tracker({
                             <div key={e.id}>
                               <span>{e.name}</span>
                               <small>
-                                {e.minSets === e.maxSets
+                                {tr(e.minSets === e.maxSets
                                   ? e.minSets
-                                  : `${e.minSets}–${e.maxSets}`}{" "}
+                                  : `${e.minSets}–${e.maxSets}`)}{tr(" ")}
                                 × {e.minReps}–{e.maxReps}
                               </small>
                             </div>
@@ -673,6 +648,7 @@ export default function Tracker({
               {(tab === "Progress" || tab === "Riwayat") && (
                 <Progress
                   historyOnly={tab === 'Riwayat'}
+                  onShare={w=>setSharing({workout:w})}
                   data={data}
                   onEdit={(w) => {
                     if (data.draft) {
@@ -688,7 +664,7 @@ export default function Tracker({
                     setTab("Latihan");
                   }}
                   onDelete={(id) => {
-                    if (confirm("Hapus sesi ini dari riwayat?"))
+                    if (confirm(tr("Hapus sesi ini dari riwayat?")))
                       setData((d) => ({
                         ...d,
                         sessions: d.sessions.filter((w) => w.id !== id),
@@ -710,14 +686,12 @@ export default function Tracker({
           <footer className="footer">
             <span className="save-state" role="status">
               <span />
-              {status}
+              {tr(status)}
+            </span>
+            <span>{tr(" REPLOG ")}<span className="muted">{tr("/ BUILT ONE REP AT A TIME")}</span>
             </span>
             <span>
-              REPLOG <span className="muted">/ BUILT ONE REP AT A TIME</span>
-            </span>
-            <span>
-              <ShieldCheck size={14} /> Catatan pribadi
-            </span>
+              <ShieldCheck size={14} />{tr(" Catatan pribadi ")}</span>
           </footer>
         </main>
       </div>
@@ -737,16 +711,18 @@ function Stat({
   unit?: string;
   foot: string;
 }) {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
   return (
     <article className="stat">
       <div className="stat-label">
-        {label}
-        <span>{icon}</span>
+        {tr(label)}
+        <span>{tr(icon)}</span>
       </div>
       <div className="stat-value">
-        {value} <small>{unit}</small>
+        {tr(value)} <small>{tr(unit)}</small>
       </div>
-      <p>{foot}</p>
+      <p>{tr(foot)}</p>
     </article>
   );
 }
@@ -763,6 +739,8 @@ function WorkoutEditor({
   onFinish: () => void;
   onDiscard: () => void;
 }) {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
   const [message, setMessage] = useState("");
   const timer = useRestTimer(w.id);
   const previous = previousSession(history, w);
@@ -801,21 +779,20 @@ function WorkoutEditor({
       <div className="workout-main">
         <div className="panel session-heading">
           <div>
-            <span className="eyebrow">SESI AKTIF · {dateLabel(w.date)}</span>
+            <span className="eyebrow">{tr("SESI AKTIF · ")}{tr(dateLabel(w.date))}</span>
             <h2>{w.name}</h2>
           </div>
           <span className="tag lime">
-            {completedSets(w)} /{" "}
-            {w.exercises.reduce((a, e) => a + e.sets.length, 0)} set
-          </span>
+            {completedSets(w)} /{tr(" ")}
+            {w.exercises.reduce((a, e) => a + e.sets.length, 0)}{tr(" set ")}</span>
         </div>
-        {message && (
+        {tr(message && (
           <p role="alert" className="error">
-            {message}
+            {tr(message)}
           </p>
-        )}
+        ))}
         <RestTimer timer={timer} />
-        <div className="previous-session panel"><Activity size={20}/><div><strong>{previous ? `Acuan ${previous.name} terakhir · ${new Date(previous.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}` : `Sesi ${w.name} pertamamu`}</strong><p>{previous ? 'Beban dan repetisi set yang selesai ditampilkan di setiap gerakan. Gunakan sebagai acuan, lalu isi hasil latihan hari ini.' : 'Belum ada sesi sebelumnya. Catatan hari ini akan menjadi acuan latihan berikutnya.'}</p></div></div>
+        <div className="previous-session panel"><Activity size={20}/><div><strong>{tr(previous ? `Acuan ${previous.name} terakhir · ${new Date(previous.date).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}` : `Sesi ${w.name} pertamamu`)}</strong><p>{tr(previous ? 'Beban dan repetisi set yang selesai ditampilkan di setiap gerakan. Gunakan sebagai acuan, lalu isi hasil latihan hari ini.' : 'Belum ada sesi sebelumnya. Catatan hari ini akan menjadi acuan latihan berikutnya.')}</p></div></div>
         {w.exercises.map((item, ei) => {
           const e = item.exercise;
           const last = previous?.exercises.find(h => exerciseKey(h.exercise) === exerciseKey(e));
@@ -823,26 +800,23 @@ function WorkoutEditor({
             <section className="panel exercise-card" key={ei}>
               <div className="exercise-head">
                 <span className="exercise-number">
-                  {String(ei + 1).padStart(2, "0")}
+                  {tr(String(ei + 1).padStart(2, "0"))}
                 </span>
                 <div>
                   <h3>{e.name}</h3>
                   <p>
-                    {e.kind === "C" ? "Compound" : "Isolation"} · Target{" "}
-                    {e.minSets}–{e.maxSets} set × {e.minReps}–{e.maxReps} rep
-                  </p>
+                    {tr(e.kind === "C" ? "Compound" : "Isolation")}{tr(" · Target")}{tr(" ")}
+                    {e.minSets}–{e.maxSets}{tr(" set × ")}{e.minReps}–{e.maxReps}{tr(" rep ")}</p>
                 </div>
               </div>
               {e.alternatives.length > 0 && (
-                <label className="variant-label">
-                  Variasi gerakan
-                  <select
+                <label className="variant-label">{tr(" Variasi gerakan ")}<select
                     value={e.name}
                     onChange={(ev) => {
                       if (
                         item.sets.some((s) => s.done || s.kg || s.reps) &&
                         !confirm(
-                          "Ganti variasi? Isian set gerakan ini akan dikosongkan.",
+                          tr("Ganti variasi? Isian set gerakan ini akan dikosongkan."),
                         )
                       )
                         return;
@@ -870,21 +844,20 @@ function WorkoutEditor({
               )}
               <div className="previous">
                 <Activity size={15} />
-                <span>
-                  Sesi sebelumnya:{" "}
-                  {last
+                <span>{tr(" Sesi sebelumnya:")}{tr(" ")}
+                  {tr(last
                     ? last.sets
                         .map((s, i) => s.done ? `Set ${i + 1}: ${s.kg} kg × ${s.reps} rep` : null)
                         .filter(Boolean)
                         .join(" · ") || "Belum ada set selesai"
-                    : "Belum ada catatan"}
+                    : "Belum ada catatan")}
                 </span>
               </div>
               <div className="set-header">
-                <span>SET</span>
-                <span>BEBAN (KG)</span>
-                <span>REPETISI</span>
-                <span>SELESAI</span>
+                <span>{tr("SET")}</span>
+                <span>{tr("BEBAN (KG)")}</span>
+                <span>{tr("REPETISI")}</span>
+                <span>{tr("SELESAI")}</span>
                 <span />
               </div>
               {item.sets.map((s, si) => (
@@ -894,13 +867,13 @@ function WorkoutEditor({
                 >
                   <b>{si + 1}</b>
                   <input
-                    aria-label={`${e.name} set ${si + 1} beban`}
+                    aria-label={tr(`${e.name} set ${si + 1} beban`)}
                     type="number"
                     inputMode="decimal"
                     min="0"
                     max="1500"
                     step="0.5"
-                    placeholder="0"
+                    placeholder={tr("0")}
                     value={s.kg}
                     onChange={(ev) => {
                       if (
@@ -912,12 +885,12 @@ function WorkoutEditor({
                     }}
                   />
                   <input
-                    aria-label={`${e.name} set ${si + 1} repetisi`}
+                    aria-label={tr(`${e.name} set ${si + 1} repetisi`)}
                     type="number"
                     inputMode="numeric"
                     min="1"
                     max="1000"
-                    placeholder={String(e.minReps)}
+                    placeholder={tr(String(e.minReps))}
                     value={s.reps}
                     onChange={(ev) => {
                       if (
@@ -930,7 +903,7 @@ function WorkoutEditor({
                   />
                   <button
                     className={s.done ? "check-set checked" : "check-set"}
-                    aria-label={`${e.name} set ${si + 1} selesai`}
+                    aria-label={tr(`${e.name} set ${si + 1} selesai`)}
                     aria-pressed={s.done}
                     onClick={() => setAt(ei, si, "done", !s.done)}
                   >
@@ -939,11 +912,11 @@ function WorkoutEditor({
                   <button
                     className="icon-button"
                     disabled={item.sets.length <= 1}
-                    aria-label={`Hapus ${e.name} set ${si + 1}`}
+                    aria-label={tr(`Hapus ${e.name} set ${si + 1}`)}
                     onClick={() => {
                       if (
                         (s.done || s.kg || s.reps) &&
-                        !confirm("Hapus set beserta isinya?")
+                        !confirm(tr("Hapus set beserta isinya?"))
                       )
                         return;
                       const next = structuredClone(w);
@@ -968,17 +941,16 @@ function WorkoutEditor({
                   onChange(next);
                 }}
               >
-                <Plus size={16} /> Tambah set
-              </button>
+                <Plus size={16} />{tr(" Tambah set ")}</button>
             </section>
           );
         })}
       </div>
       <aside className="workout-summary panel">
-        <span className="eyebrow">RINGKASAN SESI</span>
+        <span className="eyebrow">{tr("RINGKASAN SESI")}</span>
         <h2>{w.name}</h2>
         <div className="summary-number">
-          {completedSets(w)} <small>set selesai</small>
+          {completedSets(w)} <small>{tr("set selesai")}</small>
         </div>
         <div className="progress-track">
           <span
@@ -988,46 +960,41 @@ function WorkoutEditor({
           />
         </div>
         <div className="summary-line">
-          <span>Volume latihan</span>
-          <b>{fmt(volume(w))} kg</b>
+          <span>{tr("Volume latihan")}</span>
+          <b>{tr(fmt(volume(w)))}{tr(" kg")}</b>
         </div>
-        <label>
-          Catatan sesi
-          <textarea
+        <label>{tr(" Catatan sesi ")}<textarea
             maxLength={2000}
-            placeholder="Bagaimana latihanmu hari ini?"
+            placeholder={tr("Bagaimana latihanmu hari ini?")}
             value={w.notes}
             onChange={(ev) => onChange({ ...w, notes: ev.target.value })}
           />
         </label>
-        <p className="hint">
-          Tandai set yang selesai. Grafik hanya menghitung set yang ditandai.
-        </p>
+        <p className="hint">{tr(" Tandai set yang selesai. Grafik hanya menghitung set yang ditandai. ")}</p>
         <button className="primary" onClick={() => { if (completedSets(w)) timer.clear(); onFinish(); }}>
-          <Check size={18} /> Selesaikan latihan
-        </button>
+          <Check size={18} />{tr(" Selesaikan latihan ")}</button>
         <button className="text-button danger" onClick={onDiscard}>
-          <Trash2 size={15} /> Hapus draf
-        </button>
-        <p className="hint">
-          Dumbbell: kg per tangan. Barbell: termasuk batang. Gunakan penamaan
-          yang sama untuk mesin yang sama.
-        </p>
+          <Trash2 size={15} />{tr(" Hapus draf ")}</button>
+        <p className="hint">{tr(" Dumbbell: kg per tangan. Barbell: termasuk batang. Gunakan penamaan yang sama untuk mesin yang sama. ")}</p>
       </aside>
     </div>
   );
 }
 function Progress({
   data,
+  onShare,
   historyOnly = false,
   onEdit,
   onDelete,
 }: {
   data: Data;
+  onShare: (w:Workout)=>void;
   historyOnly?: boolean;
   onEdit: (w: Workout) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
   const programs = progressPrograms(data);
   const [selected, setSelected] = useState(programs[0]?.id ?? "");
   const programId = programs.some(p => p.id === selected) ? selected : programs[0]?.id ?? "";
@@ -1037,28 +1004,28 @@ function Progress({
       {!historyOnly && <section className="panel chart-panel">
         <div className="section-title">
           <div>
-            <span className="eyebrow">PERKEMBANGAN BEBAN</span>
-            <h2>Setiap kenaikan berarti.</h2>
+            <span className="eyebrow">{tr("PERKEMBANGAN BEBAN")}</span>
+            <h2>{tr("Setiap kenaikan berarti.")}</h2>
           </div>
           <div>
-            <label htmlFor="progress-program">Jenis latihan</label>
+            <label htmlFor="progress-program">{tr("Jenis latihan")}</label>
             <select id="progress-program" value={programId} onChange={e => setSelected(e.target.value)}>
               {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
         </div>
-        <p className="muted">Beban tertinggi per sesi untuk setiap gerakan · maksimal 12 sesi terakhir dari jenis latihan yang dipilih.</p>
+        <p className="muted">{tr("Beban tertinggi per sesi untuk setiap gerakan · maksimal 12 sesi terakhir dari jenis latihan yang dipilih.")}</p>
         <div className="program-charts">
           {charts.map(chart => (
             <article className="exercise-progress" key={chart.key}>
               <div className="section-title">
                 <h3>{chart.name}</h3>
-                <span className="tag">Rekor {chart.best === null ? "—" : fmt(chart.best)} kg</span>
+                <span className="tag">{tr("Rekor ")}{tr(chart.best === null ? "—" : fmt(chart.best))}{tr(" kg")}</span>
               </div>
               {chart.points.length ? <Chart points={chart.points} name={chart.name} /> : (
                 <div className="chart-empty">
                   <TrendingUp size={28} />
-                  <p>Belum ada set selesai untuk {chart.name} pada jenis latihan ini.</p>
+                  <p>{tr("Belum ada set selesai untuk ")}{chart.name}{tr(" pada jenis latihan ini.")}</p>
                 </div>
               )}
             </article>
@@ -1067,8 +1034,8 @@ function Progress({
       </section>}
       {historyOnly && <section className="panel section-block">
         <div className="section-title">
-          <h2>Riwayat latihan</h2>
-          <span className="tag">{data.sessions.length} sesi</span>
+          <h2>{tr("Riwayat latihan")}</h2>
+          <span className="tag">{data.sessions.length}{tr(" sesi")}</span>
         </div>
         {data.sessions.length ? (
           [...data.sessions]
@@ -1082,15 +1049,14 @@ function Progress({
                   <span>
                     <strong>{w.name}</strong>
                     <small>
-                      {new Date(w.date).toLocaleDateString("id-ID", {
+                      {tr(new Date(w.date).toLocaleDateString(locale, {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
-                      })}{" "}
-                      · {completedSets(w)} set
-                    </small>
+                      }))}{tr(" ")}
+                      · {completedSets(w)}{tr(" set ")}</small>
                   </span>
-                  <b>{fmt(volume(w))} kg</b>
+                  <b>{tr(fmt(volume(w)))}{tr(" kg")}</b>
                   <ChevronRight size={18} />
                 </summary>
                 <div className="history-body">
@@ -1098,24 +1064,21 @@ function Progress({
                     <p key={i}>
                       <b>{e.exercise.name}</b>
                       <span>
-                        {e.sets
+                        {tr(e.sets
                           .filter((s) => s.done)
                           .map((s) => `${s.kg} kg × ${s.reps}`)
-                          .join(" / ") || "Tidak diselesaikan"}
+                          .join(" / ") || "Tidak diselesaikan")}
                       </span>
                     </p>
                   ))}
-                  {w.notes && <p className="notes">{w.notes}</p>}
+                  {tr(w.notes && <p className="notes">{w.notes}</p>)}
                   <div className="button-row">
-                    <button className="secondary" onClick={() => onEdit(w)}>
-                      Edit sesi
-                    </button>
+                    <button type="button" className="secondary" onClick={()=>onShare(w)}>{locale==='en-US'?'Share card':'Bagikan kartu'}</button>
+                    <button className="secondary" onClick={() => onEdit(w)}>{tr(" Edit sesi ")}</button>
                     <button
                       className="text-button danger"
                       onClick={() => onDelete(w.id)}
-                    >
-                      Hapus sesi
-                    </button>
+                    >{tr(" Hapus sesi ")}</button>
                   </div>
                 </div>
               </details>
@@ -1123,9 +1086,7 @@ function Progress({
         ) : (
           <div className="empty-inline">
             <Activity />
-            <p>
-              Belum ada sesi selesai. Catatan pertamamu akan muncul di sini.
-            </p>
+            <p>{tr(" Belum ada sesi selesai. Catatan pertamamu akan muncul di sini. ")}</p>
           </div>
         )}
       </section>}
@@ -1133,6 +1094,8 @@ function Progress({
   );
 }
 function Chart({ points, name }: { points: { date: string; kg: number }[]; name: string }) {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
   const gradientId = useId();
   const max = Math.max(...points.map((p) => p.kg), 10) * 1.15;
   const x = (i: number) => 55 + (i * 600) / Math.max(points.length - 1, 1);
@@ -1142,7 +1105,7 @@ function Chart({ points, name }: { points: { date: string; kg: number }[]; name:
       <svg
         viewBox="0 0 700 245"
         role="img"
-        aria-label={`Grafik beban tertinggi per sesi ${name}`}
+        aria-label={tr(`Grafik beban tertinggi per sesi ${name}`)}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -1161,7 +1124,7 @@ function Chart({ points, name }: { points: { date: string; kg: number }[]; name:
               strokeDasharray="4 5"
             />
             <text x="4" y={200 - i * 40} fill="#8c9488" fontSize="12">
-              {fmt((max * i) / 4)}
+              {tr(fmt((max * i) / 4))}
             </text>
           </g>
         ))}
@@ -1179,8 +1142,7 @@ function Chart({ points, name }: { points: { date: string; kg: number }[]; name:
           <g key={i}>
             <circle cx={x(i)} cy={y(p.kg)} r="5" fill="#c7f76b">
               <title>
-                {dateLabel(p.date)}: {p.kg} kg
-              </title>
+                {tr(dateLabel(p.date))}: {p.kg}{tr(" kg ")}</title>
             </circle>
             {(i % Math.ceil(points.length / 6) === 0 ||
               i === points.length - 1) && (
@@ -1191,18 +1153,17 @@ function Chart({ points, name }: { points: { date: string; kg: number }[]; name:
                 fill="#9a9f94"
                 fontSize="12"
               >
-                {dateLabel(p.date)}
+                {tr(dateLabel(p.date))}
               </text>
             )}
           </g>
         ))}
       </svg>
       <details className="chart-data">
-        <summary>Lihat angka grafik</summary>
+        <summary>{tr("Lihat angka grafik")}</summary>
         {points.map((p, i) => (
           <p key={i}>
-            {dateLabel(p.date)}: {fmt(p.kg)} kg
-          </p>
+            {tr(dateLabel(p.date))}: {tr(fmt(p.kg))}{tr(" kg ")}</p>
         ))}
       </details>
     </div>
@@ -1221,6 +1182,8 @@ function Profile({
   email: string;
   demo: boolean;
 }) {
+  const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
+
   const [editing, setEditing] = useState<Template | null>(null);
   const editorRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -1249,25 +1212,30 @@ function Profile({
   }
   return (
     <>
+      <section className="panel profile-preferences" aria-labelledby="language-heading">
+        <div><span className="eyebrow">{locale === 'en-US' ? 'PREFERENCES' : 'PENYESUAIAN'}</span>
+        <h2 id="language-heading">{locale === 'en-US' ? 'Display language' : 'Bahasa tampilan'}</h2>
+        <p className="muted">{locale === 'en-US' ? 'Applies across RepLog and is saved on this device.' : 'Berlaku di seluruh RepLog dan tersimpan di perangkat ini.'}</p></div>
+        <LanguagePicker />
+      </section>
       <div className="profile-grid">
         <section className="panel">
           <div className="profile-title">
-            <span className="avatar">{name.slice(0, 1).toUpperCase()}</span>
+            <span className="avatar">{tr(name.slice(0, 1).toUpperCase())}</span>
             <div>
               <h2>{name}</h2>
               <p>{email}</p>
             </div>
           </div>
           <p className="privacy">
-            <ShieldCheck size={17} />{" "}
-            {demo
+            <ShieldCheck size={17} />{tr(" ")}
+            {tr(demo
               ? "Pratinjau lokal, tidak terhubung ke akun."
-              : "Catatan hanya dapat diakses akunmu."}
+              : "Catatan hanya dapat diakses akunmu.")}
           </p>
           <div className="button-row">
             <button className="secondary" onClick={() => download(data)}>
-              <ArrowDownToLine size={17} /> Ekspor data JSON
-            </button>
+              <ArrowDownToLine size={17} />{tr(" Ekspor data JSON ")}</button>
             {!demo && (
               <button
                 className="text-button"
@@ -1282,14 +1250,12 @@ function Profile({
                   window.location.assign("/login");
                 }}
               >
-                <LogOut size={17} /> Keluar
-              </button>
+                <LogOut size={17} />{tr(" Keluar ")}</button>
             )}
           </div>
         </section>
         <section className="panel">
-          <h2>
-            Berat badan <span className="count">Opsional</span>
+          <h2>{tr(" Berat badan ")}<span className="count">{tr("Opsional")}</span>
           </h2>
           <form
             className="weight-form"
@@ -1306,9 +1272,7 @@ function Profile({
               setNotice("Berat badan dicatat.");
             }}
           >
-            <label>
-              Tanggal
-              <input
+            <label>{tr(" Tanggal ")}<input
                 type="date"
                 required
                 value={date}
@@ -1316,20 +1280,18 @@ function Profile({
                 onChange={(e) => setDate(e.target.value)}
               />
             </label>
-            <label>
-              Berat (kg)
-              <input
+            <label>{tr(" Berat (kg) ")}<input
                 type="number"
                 required
                 min="1"
                 max="500"
                 step="0.1"
                 value={weight}
-                placeholder="70"
+                placeholder={tr("70")}
                 onChange={(e) => setWeight(e.target.value)}
               />
             </label>
-            <button className="primary" aria-label="Simpan berat badan">
+            <button className="primary" aria-label={tr("Simpan berat badan")}>
               <Plus size={19} />
             </button>
           </form>
@@ -1338,13 +1300,13 @@ function Profile({
             .slice(0, 10)
             .map((w) => (
               <div className="weight-row" key={w.id}>
-                <span>{dateLabel(w.date + "T12:00:00")}</span>
-                <b>{fmt(w.kg)} kg</b>
+                <span>{tr(dateLabel(w.date + "T12:00:00"))}</span>
+                <b>{tr(fmt(w.kg))}{tr(" kg")}</b>
                 <button
                   className="icon-button"
-                  aria-label={`Hapus berat badan ${w.date}`}
+                  aria-label={tr(`Hapus berat badan ${w.date}`)}
                   onClick={() => {
-                    if (confirm("Hapus catatan berat badan ini?"))
+                    if (confirm(tr("Hapus catatan berat badan ini?")))
                       onChange((d) => ({
                         ...d,
                         weights: d.weights.filter((x) => x.id !== w.id),
@@ -1357,16 +1319,16 @@ function Profile({
             ))}
         </section>
       </div>
-      {notice && (
+      {tr(notice && (
         <p className="notice" role="status">
-          {notice}
+          {tr(notice)}
         </p>
-      )}
+      ))}
       <section className="panel section-block">
         <div className="section-title">
           <div>
-            <h2>Template & jadwal</h2>
-            <p>Perubahan hanya berlaku untuk latihan baru milikmu.</p>
+            <h2>{tr("Template & jadwal")}</h2>
+            <p>{tr("Perubahan hanya berlaku untuk latihan baru milikmu.")}</p>
           </div>
           <Settings2 size={22} />
         </div>
@@ -1375,8 +1337,7 @@ function Profile({
             <div>
               <strong>{t.name}</strong>
               <small>
-                {days[t.day]} · {t.exercises.length} gerakan
-              </small>
+                {tr(days[t.day])} · {t.exercises.length}{tr(" gerakan ")}</small>
             </div>
             <button
               className="secondary"
@@ -1384,9 +1345,7 @@ function Profile({
                 setEditing(structuredClone(t));
                 setNotice("");
               }}
-            >
-              Sesuaikan
-            </button>
+            >{tr(" Sesuaikan ")}</button>
           </div>
         ))}
       </section>
@@ -1394,30 +1353,26 @@ function Profile({
         <dialog
           ref={editorRef}
           onCancel={() => setEditing(null)}
-          aria-label="Edit template"
+          aria-label={tr("Edit template")}
           className="template-editor panel"
         >
           <div className="section-title">
-            <h2>Sesuaikan {editing.name}</h2>
+            <h2>{tr("Sesuaikan ")}{editing.name}</h2>
             <button
               className="icon-button"
-              aria-label="Tutup editor"
+              aria-label={tr("Tutup editor")}
               onClick={() => setEditing(null)}
             >
               <X />
             </button>
           </div>
-          <label>
-            Nama sesi
-            <input
+          <label>{tr(" Nama sesi ")}<input
               maxLength={100}
               value={editing.name}
               onChange={(e) => setEditing({ ...editing, name: e.target.value })}
             />
           </label>
-          <label>
-            Hari latihan
-            <select
+          <label>{tr(" Hari latihan ")}<select
               value={editing.day}
               onChange={(e) =>
                 setEditing({ ...editing, day: Number(e.target.value) })
@@ -1425,20 +1380,16 @@ function Profile({
             >
               {days.map((day, i) => (
                 <option value={i} key={day}>
-                  {day}
+                  {tr(day)}
                 </option>
               ))}
             </select>
           </label>
-          <div className="hint">
-            Target berupa rentang. Contoh: 2–3 set dan 10–12 repetisi. Gunakan
-            nama berbeda untuk mesin atau variasi berbeda.
-          </div>
+          <div className="hint">{tr(" Target berupa rentang. Contoh: 2–3 set dan 10–12 repetisi. Gunakan nama berbeda untuk mesin atau variasi berbeda. ")}</div>
           {editing.exercises.map((e, i) => (
             <div className="edit-exercise" key={e.id}>
               <div className="edit-name">
-                <label>
-                  Gerakan {i + 1}
+                <label>{tr(" Gerakan ")}{i + 1}
                   <input
                     value={e.name}
                     maxLength={100}
@@ -1454,7 +1405,7 @@ function Profile({
                 </label>
                 <button
                   className="icon-button"
-                  aria-label={`Hapus gerakan ${e.name}`}
+                  aria-label={tr(`Hapus gerakan ${e.name}`)}
                   disabled={editing.exercises.length <= 1}
                   onClick={() =>
                     setEditing({
@@ -1470,7 +1421,7 @@ function Profile({
                 {(["minSets", "maxSets", "minReps", "maxReps"] as const).map(
                   (field, fi) => (
                     <label key={field}>
-                      {["Set min", "Set maks", "Rep min", "Rep maks"][fi]}
+                      {tr(["Set min", "Set maks", "Rep min", "Rep maks"][fi])}
                       <input
                         type="number"
                         min="1"
@@ -1515,20 +1466,16 @@ function Profile({
               })
             }
           >
-            <Plus size={16} /> Tambah gerakan
-          </button>
-          {notice && (
+            <Plus size={16} />{tr(" Tambah gerakan ")}</button>
+          {tr(notice && (
             <p className="error" role="alert">
-              {notice}
+              {tr(notice)}
             </p>
-          )}
+          ))}
           <div className="button-row editor-actions">
             <button className="primary" onClick={saveTemplate}>
-              <Save size={17} /> Simpan template
-            </button>
-            <button className="secondary" onClick={() => setEditing(null)}>
-              Batal
-            </button>
+              <Save size={17} />{tr(" Simpan template ")}</button>
+            <button className="secondary" onClick={() => setEditing(null)}>{tr(" Batal ")}</button>
           </div>
         </dialog>
       )}

@@ -44,3 +44,6 @@ Test real registration, confirmation, incorrect password, logout, and two-accoun
 - Change Indonesian/English only in Profile > Preferences. The language applies throughout the site and is saved per device.
 - Completed sessions offer a PNG share card from History or immediately after finishing. Story and square formats are supported. Sharing uses the device share menu when available, otherwise download. No private notes, email, or body weight are included.
 - Run `npm run verify` before deploying. See [DEPLOYMENT.md](./DEPLOYMENT.md) for the existing Vercel project settings.
+
+## Appearance
+Profile > Color theme offers System, Light, and Dark. New visitors follow their device theme, including changes while the page is open. Explicit choices override the system theme and are restored before the page renders. Theme controls appear only in Profile. The exported share card retains its designed dark background, independently of the website appearance.

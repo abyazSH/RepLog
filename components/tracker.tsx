@@ -1,4 +1,5 @@
 "use client";
+import { ThemePicker } from '@/components/theme';
 import ShareCard from '@/components/share-card';
 import { useLanguage, LanguagePicker } from '@/components/language';
 import { useEffect, useId, useRef, useState } from "react";
@@ -1218,6 +1219,7 @@ function Profile({
         <p className="muted">{locale === 'en-US' ? 'Applies across RepLog and is saved on this device.' : 'Berlaku di seluruh RepLog dan tersimpan di perangkat ini.'}</p></div>
         <LanguagePicker />
       </section>
+      <ThemePicker />
       <div className="profile-grid">
         <section className="panel">
           <div className="profile-title">

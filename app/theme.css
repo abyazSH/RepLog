@@ -1,0 +1,41 @@
+:root { --accent: #c7f76b; }
+.theme-picker button { display:flex; align-items:center; gap:8px; }
+:root[data-theme="light"] {
+ color-scheme:light;
+ --bg:#f4f6f0; --panel:#ffffff; --border:#d5ddcc; --muted:#58634e;
+ --text:#1e2919; --deep:#eaf0e2; --accent:#3d661b;
+}
+/* Keep lime-filled call-to-action panels high contrast in both modes. */
+.today-card .primary { color:var(--lime); }
+:root[data-theme="light"] .sidebar { background:#fbfcf8; }
+:root[data-theme="light"] :is(.secondary,.day-circle,.check-set,.rest-visual button) { background:#edf2e7; color:var(--text); border-color:var(--border); }
+:root[data-theme="light"] :is(.secondary:hover,.nav-item:hover,.icon-button:hover,.rest-visual button:hover) { background:#e2ead8; }
+:root[data-theme="light"] :is(.avatar,.mini-icon,.exercise-number,.count,.day.current,.nav-item.active,.previous,.demo-banner,.notice) { background:#e8f1de; color:#3d5729; border-color:#c6d7b7; }
+:root[data-theme="light"] :is(.breadcrumb b,.stat-value,.section-title,.summary-line,.history-row,.history-detail,.weight-row) { color:var(--text); }
+:root[data-theme="light"] :is(.nav-caption,.side-note > span,.side-user > svg,.breadcrumb,.save-state,.date-pill,.stat-label,.stat-value small,.stat-foot,.day,.week-footer,.program-index,.program-index svg,.program-day,.history-row small,.set-header,.set-row > b,.icon-button,.summary-line span,.hint,.privacy,.footer,.record-label,.history-detail summary small,.chart-data,.auth-form small,.template-setting small,.weight-row span,.exercise-head p) { color:var(--muted); }
+:root[data-theme="light"] :is(.text-button,.text-link,.add-set) { color:var(--accent); border-color:#b8cba5; }
+:root[data-theme="light"] :is(input,textarea,select,.auth-form input,.rest-presets select) { background:#fbfcf8; color:var(--text); border-color:var(--border); }
+:root[data-theme="light"] input::placeholder,:root[data-theme="light"] textarea::placeholder { color:#6b7661; }
+:root[data-theme="light"] .set-row.completed input { background:#edf6e4; color:#32501f; border-color:#9cbd7c; }
+:root[data-theme="light"] :is(.check-set.checked,.day-circle.done,.rest-visual .rest-primary,.rest-presets button[aria-pressed=true]) { background:var(--lime); color:#17210e; }
+:root[data-theme="light"] .rest-visual .rest-primary:hover { background:#b7e85d; }
+:root[data-theme="light"] .progress-track { background:#dce5d2; }
+:root[data-theme="light"] :is(.exercise-progress,.history-detail summary) { border-color:var(--border); }
+:root[data-theme="light"] .error { background:#fff0e9; color:#8c311e; border-color:#e1b6a6; }
+:root[data-theme="light"] .danger { color:#a13e2c; }
+:root[data-theme="light"] .record-card { background:linear-gradient(140deg,#e5f3d8,#fff 75%); }
+:root[data-theme="light"] .landing-preview { background:radial-gradient(ellipse at top right,#e4f2d4,#fff 60%); border-color:var(--border); box-shadow:0 24px 60px #23321112; }
+:root[data-theme="light"] .rest-visual { --timer-accent:#4b791f; background:linear-gradient(150deg,#fff,#f0f5e9); border-color:var(--border); }
+:root[data-theme="light"] .rest-visual.is-paused { --timer-accent:#956900; }
+:root[data-theme="light"] .rest-track { stroke:#dfe8d7; }
+:root[data-theme="light"] .rest-visual .rest-clock { color:var(--text); }
+:root[data-theme="light"] .rest-context { background:#edf3e6; border-color:var(--border); }
+:root[data-theme="light"] .rest-presets { border-color:var(--border); }
+:root[data-theme="light"] :is(.chart,.landing-mini-chart) :is(polyline,path,circle)[stroke="#c7f76b"] { stroke:#54872c; }
+:root[data-theme="light"] .chart circle,:root[data-theme="light"] .landing-mini-chart circle { fill:#54872c; }
+:root[data-theme="light"] .chart text { fill:#58634e; }
+:root[data-theme="light"] .chart line,:root[data-theme="light"] .landing-mini-chart path[stroke="#30342b"] { stroke:#d5ddcc; }
+:root[data-theme="light"] :is(label,.history-body p b,.chart-empty h3) { color:var(--text); }
+:root[data-theme="light"] :is(.stat-label svg,.exercise-preview small,.chart-empty,.record-number small,.record-foot) { color:var(--muted); }
+.theme-picker { flex-wrap:wrap; }
+@media(max-width:900px) { .profile-preferences:has(.theme-picker) { flex-direction:column; align-items:flex-start; } }

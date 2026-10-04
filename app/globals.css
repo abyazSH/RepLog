@@ -14,15 +14,15 @@
 .rest-timer { margin-bottom: 20px; padding: 22px; border-color: #536a37; }
 .rest-heading { display: flex; justify-content: space-between; gap: 18px; align-items: center; }
 .rest-heading h3 { margin-top: 6px; }
-.rest-clock { font-size: 2.6rem; font-weight: 800; color: var(--lime); font-variant-numeric: tabular-nums; }
+.rest-clock { font-size: 2.6rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
 .rest-timer > p { margin: 12px 0; color: var(--muted); }
 .rest-timer.rest-complete { background: #23301a; }
-.rest-complete > p { color: var(--lime); }
+.rest-complete > p { color: var(--accent); }
 .rest-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
 .rest-controls label { display: grid; gap: 6px; font-size: .85rem; }
 .rest-controls select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
 .previous-session { display: flex; gap: 12px; align-items: flex-start; padding: 20px; margin-bottom: 20px; }
-.previous-session > svg { flex-shrink: 0; color: var(--lime); }
+.previous-session > svg { flex-shrink: 0; color: var(--accent); }
 .previous-session p { color: var(--muted); font-size: .85rem; line-height: 1.6; margin-top: 8px; }
 * {
   box-sizing: border-box;
@@ -133,7 +133,7 @@ button {
   font-weight: 800;
 }
 .brand > span:not(.brand-mark) {
-  color: var(--lime);
+  color: var(--accent);
 }
 .brand i {
   font-size: 0.7rem;
@@ -183,7 +183,7 @@ button {
 }
 .nav-item.active {
   background: #c7f76b13;
-  color: var(--lime);
+  color: var(--accent);
   font-weight: 600;
 }
 .nav-dot {
@@ -240,7 +240,7 @@ button {
   height: 40px;
   background: #333c28;
   border: 1px solid #52623c;
-  color: var(--lime);
+  color: var(--accent);
   border-radius: 50%;
   font-weight: 700;
   flex-shrink: 0;
@@ -311,7 +311,7 @@ button {
   margin-bottom: 28px;
 }
 .demo-banner b {
-  color: var(--lime);
+  color: var(--accent);
   font-weight: 500;
 }
 .demo-banner a {
@@ -324,7 +324,7 @@ button {
   font-size: 0.75rem;
   letter-spacing: 1.8px;
   font-weight: 600;
-  color: var(--lime);
+  color: var(--accent);
 }
 .page-heading {
   display: flex;
@@ -481,7 +481,7 @@ button {
 }
 .today-card .primary {
   background: #222d17;
-  color: var(--lime);
+  color: var(--accent);
   position: relative;
   z-index: 1;
   min-width: 180px;
@@ -556,11 +556,11 @@ button {
 .day.current {
   background: #242c1c;
   border-radius: 8px;
-  color: var(--lime);
+  color: var(--accent);
 }
 .day.current .day-circle {
   border: 1px solid #738d4e;
-  color: var(--lime);
+  color: var(--accent);
 }
 .day-circle.done {
   background: var(--lime);
@@ -617,7 +617,7 @@ button {
   padding: 6px 0;
 }
 .text-button:hover {
-  color: var(--lime);
+  color: var(--accent);
 }
 .program-grid {
   display: grid;
@@ -719,7 +719,7 @@ button {
   text-align: right;
 }
 .lime {
-  color: var(--lime);
+  color: var(--accent);
 }
 .footer {
   display: flex;
@@ -789,7 +789,7 @@ button {
   height: 36px;
   border-radius: 7px;
   background: #2f3924;
-  color: var(--lime);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1264,7 +1264,7 @@ textarea::placeholder {
   gap: 18px;
   align-items: center;
   justify-content: center;
-  color: var(--lime);
+  color: var(--accent);
 }
 .login {
   min-height: 100vh;
@@ -1287,7 +1287,7 @@ textarea::placeholder {
   line-height: 1.25;
 }
 .login-card h1 span {
-  color: var(--lime);
+  color: var(--accent);
 }
 .login-card > .primary {
   margin: 32px 0 14px;
@@ -1297,7 +1297,7 @@ textarea::placeholder {
   margin: 0 0 18px;
 }
 .text-link {
-  color: var(--lime);
+  color: var(--accent);
   font-size: 0.875rem;
 }
 .login-art {
@@ -1770,7 +1770,7 @@ textarea::placeholder {
 .share-options { display:grid; gap:16px; }
 .share-options fieldset { display:grid; gap:12px; padding:16px; border:1px solid var(--border); border-radius:12px; }
 .share-options label { display:flex; gap:10px; align-items:center; }
-.share-options input { accent-color:var(--lime); width:18px; height:18px; }
+.share-options input { accent-color: var(--accent); width:18px; height:18px; }
 .share-options button { justify-content:center; }
 .share-options button:disabled { opacity:.5; cursor:wait; }
 .share-options small,.share-dialog > p { line-height:1.6; }

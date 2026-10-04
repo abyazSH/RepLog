@@ -1,7 +1,10 @@
+import { themeBootstrap } from "@/lib/theme";
+import { ThemeProvider } from "@/components/theme";
 import { LanguageProvider } from "@/components/language";
 import type { Metadata } from "next";
 import "./globals.css";
 import "./landing.css";
+import "./theme.css";
 export const metadata: Metadata = {
   title: "RepLog — Catatan latihanmu",
   description:
@@ -11,8 +14,9 @@ export const metadata: Metadata = {
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
-      <body><LanguageProvider>{children}</LanguageProvider></body>
+    <html lang="id" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeBootstrap }}/></head>
+      <body><LanguageProvider><ThemeProvider>{children}</ThemeProvider></LanguageProvider></body>
     </html>
   );
 }

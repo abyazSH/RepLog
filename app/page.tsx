@@ -1,4 +1,5 @@
 "use client";
+import GuestOnly from '@/components/guest-only';
 import { useLanguage } from '@/components/language';
 import Link from 'next/link';
 import { ArrowUpRight, Check, Dumbbell, TrendingUp, CalendarDays, ShieldCheck, ArrowRight } from 'lucide-react';
@@ -6,7 +7,7 @@ import { ArrowUpRight, Check, Dumbbell, TrendingUp, CalendarDays, ShieldCheck, A
 export default function Page() {
   const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
 
-  return <div className="landing">
+  return <GuestOnly><div className="landing">
     <header className="landing-nav">
       <Link href="/" className="brand" aria-label={tr("RepLog")}><span className="brand-mark"><Dumbbell /></span>{tr("rep")}<span>{tr("log")}</span></Link>
       <nav aria-label={tr("Navigasi utama")}><a href="#fitur">{tr("Fitur")}</a><Link href="/login">{tr("Masuk")}</Link><Link className="primary" href="/register">{tr("Buat akun ")}<ArrowUpRight size={17}/></Link></nav>
@@ -17,7 +18,7 @@ export default function Page() {
           <span className="eyebrow">{tr("YOUR PACE. YOUR PROGRESS.")}</span>
           <h1>{tr("Setiap repetisi")}<br/>{tr("punya ")}<span>{tr("cerita.")}</span></h1>
           <p>{tr("Catat latihanmu hari ini. Lihat seberapa jauh kamu berkembang besok. RepLog membantu kamu menyimpan setiap set, mengikuti program, dan memahami progressmu.")}</p>
-          <div className="landing-actions"><Link href="/register" className="primary">{tr("Mulai catat latihan ")}<ArrowUpRight size={19}/></Link><Link href="/demo" className="secondary">{tr("Coba demo ")}<ArrowRight size={18}/></Link></div>
+          <div className="landing-actions"><Link href="/register" className="primary">{tr("Mulai catat latihan ")}<ArrowUpRight size={19}/></Link></div>
           <div className="landing-promise"><ShieldCheck size={17}/>{tr(" Catatan pribadi. Fokus pada perkembanganmu sendiri.")}</div>
         </div>
         <div className="landing-preview" aria-label={tr("Contoh tampilan catatan latihan, bukan data akun")}>
@@ -41,5 +42,5 @@ export default function Page() {
       <section className="landing-bottom"><div><span className="eyebrow">{tr("CONSISTENCY OVER PERFECTION")}</span><h2>{tr("Mulai dari latihan berikutnya.")}</h2><p>{tr("Tidak harus sempurna. Cukup mulai mencatat.")}</p></div><Link href="/register" className="primary">{tr("Buat akun RepLog ")}<ArrowUpRight size={19}/></Link></section>
     </main>
     <footer className="landing-footer"><span>{tr("RepLog · Catatan latihanmu.")}</span><Link href="/login">{tr("Sudah punya akun? Masuk →")}</Link></footer>
-  </div>;
+  </div></GuestOnly>;
 }

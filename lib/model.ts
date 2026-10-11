@@ -6,6 +6,8 @@ export const exerciseSchema = z
     id,
     name,
     kind: z.enum(["C", "I"]),
+    tracking: z.enum(["strength", "treadmill", "bike"]).optional(),
+    targetMinutes: z.number().positive().max(600).optional(),
     minSets: z.number().int().min(1).max(10),
     maxSets: z.number().int().min(1).max(10),
     minReps: z.number().int().min(1).max(100),
@@ -45,6 +47,20 @@ const setSchema = z
     (v) => !v.done || (v.kg !== "" && Number(v.reps) > 0),
     "Isi beban dan repetisi sebelum menyelesaikan set",
   );
+const cardioNumber = (max: number) => z.string().max(12).refine(v => v === "" || (/^\d+(\.\d+)?$/.test(v) && Number(v) <= max), "Angka kardio tidak valid");
+export const cardioSchema = z.object({
+  durationMinutes: cardioNumber(600), speedKmh: cardioNumber(50), inclinePercent: cardioNumber(40),
+  resistance: cardioNumber(1000), distanceKm: cardioNumber(500), cadenceRpm: cardioNumber(300), watts: cardioNumber(3000), done: z.boolean(),
+});
+export type Cardio = z.infer<typeof cardioSchema>;
+export const isCardio = (e: Exercise) => e.tracking === "treadmill" || e.tracking === "bike";
+export function emptyCardio(): Cardio { return {durationMinutes:"",speedKmh:"",inclinePercent:"0",resistance:"",distanceKm:"",cadenceRpm:"",watts:"",done:false}; }
+export const entrySchema = z.object({exercise:exerciseSchema,sets:z.array(setSchema).max(10),cardio:cardioSchema.optional()}).refine(entry => {
+  if(!isCardio(entry.exercise)) return entry.sets.length > 0 && !entry.cardio;
+  if(entry.sets.length || !entry.cardio) return false;
+  const c=entry.cardio;
+  return !c.done || (Number(c.durationMinutes)>0 && (entry.exercise.tracking !== "treadmill" || (Number(c.speedKmh)>0 && c.inclinePercent!=="")));
+}, "Isi durasi; treadmill juga memerlukan speed dan incline. Latihan beban memerlukan set.");
 export const sessionSchema = z
   .object({
     id,
@@ -55,21 +71,18 @@ export const sessionSchema = z
     notes: z.string().max(2000),
     exercises: z
       .array(
-        z.object({
-          exercise: exerciseSchema,
-          sets: z.array(setSchema).min(1).max(10),
-        }),
+        entrySchema,
       )
       .min(1)
       .max(30),
   })
   .refine(
-    (s) => !s.finished || s.exercises.some((e) => e.sets.some((s) => s.done)),
-    "Selesaikan minimal satu set",
+    (s) => !s.finished || s.exercises.some((e) => e.cardio?.done || e.sets.some((s) => s.done)),
+    "Selesaikan minimal satu set atau kardio",
   );
 export const stateSchema = z
   .object({
-    templates: z.array(templateSchema).min(1).max(20),
+    templates: z.array(templateSchema).max(20),
     sessions: z.array(sessionSchema).max(2000),
     draft: sessionSchema.nullable(),
     weights: z
@@ -220,22 +233,22 @@ export function volume(w: Workout) {
   return w.exercises.reduce(
     (a, e) =>
       a +
-      e.sets
+      (isCardio(e.exercise) ? [] : e.sets)
         .filter((s) => s.done)
         .reduce((a, s) => a + Number(s.kg) * Number(s.reps), 0),
     0,
   );
 }
 export function completedSets(w: Workout) {
-  return w.exercises.flatMap((e) => e.sets).filter((s) => s.done).length;
+  return w.exercises.filter(e=>!isCardio(e.exercise)).flatMap((e) => e.sets).filter((s) => s.done).length;
 }
 export function exerciseKey(e: Exercise) {
-  return e.name.trim().toLowerCase();
+  return (isCardio(e) ? e.tracking + ":" : "") + e.name.trim().toLowerCase();
 }
 export function bestSets(data: Data, key: string) {
   return data.sessions.flatMap((w) =>
     w.exercises
-      .filter((e) => exerciseKey(e.exercise) === key)
+      .filter((e) => !isCardio(e.exercise) && exerciseKey(e.exercise) === key)
       .flatMap((e) =>
         e.sets.filter((s) => s.done).map((s) => ({ ...s, date: w.date })),
       ),
@@ -253,6 +266,7 @@ export function newWorkout(t: Template, previous?: Workout): Workout {
       const prev = previous?.exercises.find(
         (p) => exerciseKey(p.exercise) === exerciseKey(e),
       );
+      if (isCardio(e)) return {exercise:structuredClone(e),sets:[],cardio:emptyCardio()};
       return {
         exercise: structuredClone(e),
         sets: Array.from({ length: e.minSets }, (_, i) => ({
@@ -264,3 +278,7 @@ export function newWorkout(t: Template, previous?: Workout): Workout {
     }),
   };
 }
+
+export function cardioMinutes(w: Workout) { return w.exercises.reduce((sum,e)=>sum+(isCardio(e.exercise)&&e.cardio?.done?Number(e.cardio.durationMinutes):0),0); }
+export function completedEntries(w: Workout) { return completedSets(w)+w.exercises.filter(e=>isCardio(e.exercise)&&e.cardio?.done).length; }
+export function totalEntries(w: Workout) { return w.exercises.reduce((sum,e)=>sum+(isCardio(e.exercise)?1:e.sets.length),0); }

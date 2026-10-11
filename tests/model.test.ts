@@ -64,3 +64,14 @@ test("invalid target ranges, empty completed sessions, and duplicate session IDs
   valid.sessions.push(structuredClone(w));
   assert.equal(stateSchema.safeParse(valid).success, false);
 });
+
+test("clearing programs preserves valid history, active session, and weights", () => {
+ const data=emptyData(); const session=newWorkout(data.templates[0]);
+ session.finished=true; session.exercises[0].sets[0]={kg:"20",reps:"10",done:true};
+ data.sessions=[session]; data.draft=newWorkout(data.templates[1]);
+ data.weights=[{id:"weight",date:"2026-10-11",kg:70}]; data.templates=[];
+ const parsed=stateSchema.parse(data);
+ assert.equal(parsed.sessions[0].exercises[0].exercise.name,"Lat Pulldown");
+ assert.equal(parsed.draft?.name,"Push"); assert.equal(parsed.weights[0].kg,70);
+ assert.equal(emptyData().templates.length,5);
+});

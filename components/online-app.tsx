@@ -26,6 +26,6 @@ export default function OnlineApp() {
     load();
     return () => { active = false; };
   }, []);
-  if (identity) return <Tracker demo={false} direct name={identity.name} email={identity.email} />;
+  if (identity) return <Tracker direct name={identity.name} email={identity.email} />;
   return <main className="login"><div className="login-card"><div className="brand">{tr("rep")}<span>{tr("log")}</span></div><h1>{tr(message)}</h1><p>{tr("Mohon tunggu…")}</p></div></main>;
 }

@@ -1,4 +1,4 @@
-import { exerciseKey, type Data } from './model';
+import { isCardio, exerciseKey, type Data } from './model';
 
 export function progressPrograms(data: Data) {
   const programs = new Map(data.templates.map(t => [t.id, { id: t.id, name: t.name }]));
@@ -12,9 +12,9 @@ export function programProgress(data: Data, templateId: string) {
   const sessions = data.sessions.filter(s => s.finished && s.templateId === templateId)
     .slice().sort((a, b) => a.date.localeCompare(b.date));
   const names = new Map<string, string>();
-  for (const exercise of data.templates.find(t => t.id === templateId)?.exercises ?? []) names.set(exerciseKey(exercise), exercise.name);
+  for (const exercise of (data.templates.find(t => t.id === templateId)?.exercises ?? []).filter(e=>!isCardio(e))) names.set(exerciseKey(exercise), exercise.name);
   for (const session of sessions) for (const entry of session.exercises) {
-    if (entry.sets.some(s => s.done)) names.set(exerciseKey(entry.exercise), entry.exercise.name);
+    if (!isCardio(entry.exercise) && entry.sets.some(s => s.done)) names.set(exerciseKey(entry.exercise), entry.exercise.name);
   }
   return [...names].map(([key, name]) => {
     const points = sessions.flatMap(session => {

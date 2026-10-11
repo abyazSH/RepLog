@@ -52,7 +52,7 @@ export default function Login({ready,register=false}:{ready:boolean;register?:bo
  {!pending && <Link className="text-button" href={register?'/login':'/register'}>{tr(register?'Sudah punya akun? Masuk':'Belum punya akun? Daftar')}</Link>}
  {!ready&&<p className="notice">{tr("Login online belum diaktifkan. Kamu bisa mencoba pratinjau.")}</p>}
  {tr(notice&&<p role="alert" className="error">{tr(notice)}</p>)}{tr(message&&<p role="status" className="notice">{tr(message)}</p>)}
- <a href="/demo" className="text-link">{tr("Coba pratinjau lokal →")}</a>
+
  <div className="privacy"><ShieldCheck size={16}/>{tr(" Catatanmu hanya dapat diakses oleh akunmu")}</div>
  </div><div className="login-art" aria-hidden="true"><b>{tr("ONE")}<br/>{tr("MORE")}<br/><span>{tr("REP.")}</span></b><small>{tr("CONSISTENCY OVER PERFECTION / REPLOG")}</small></div></main>;
 }

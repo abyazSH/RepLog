@@ -255,7 +255,7 @@ export function bestSets(data: Data, key: string) {
   );
 }
 export function newWorkout(t: Template, previous?: Workout): Workout {
-  return {
+  const workout: Workout = {
     id: crypto.randomUUID(),
     templateId: t.id,
     name: t.name,
@@ -263,22 +263,56 @@ export function newWorkout(t: Template, previous?: Workout): Workout {
     finished: false,
     notes: "",
     exercises: t.exercises.map((e) => {
-      const prev = previous?.exercises.find(
-        (p) => exerciseKey(p.exercise) === exerciseKey(e),
-      );
       if (isCardio(e)) return {exercise:structuredClone(e),sets:[],cardio:emptyCardio()};
       return {
         exercise: structuredClone(e),
-        sets: Array.from({ length: e.minSets }, (_, i) => ({
-          kg: prev?.sets[i]?.kg ?? "",
+        sets: Array.from({ length: e.minSets }, () => ({
+          kg: "",
           reps: "",
           done: false,
         })),
       };
     }),
   };
+  return previous ? copyPreviousSets(workout, previous) : workout;
+}
+
+export function copyPreviousSets(workout: Workout, previous: Workout): Workout {
+  const next = structuredClone(workout);
+  for (const entry of next.exercises) {
+    if (isCardio(entry.exercise)) continue;
+    const prior = previous.exercises.find(p => !isCardio(p.exercise) && exerciseKey(p.exercise) === exerciseKey(entry.exercise));
+    const completed = prior?.sets.filter(set => set.done) ?? [];
+    if (completed.length) entry.sets = completed.map(set => ({kg:set.kg, reps:set.reps, done:false}));
+  }
+  return next;
 }
 
 export function cardioMinutes(w: Workout) { return w.exercises.reduce((sum,e)=>sum+(isCardio(e.exercise)&&e.cardio?.done?Number(e.cardio.durationMinutes):0),0); }
 export function completedEntries(w: Workout) { return completedSets(w)+w.exercises.filter(e=>isCardio(e.exercise)&&e.cardio?.done).length; }
 export function totalEntries(w: Workout) { return w.exercises.reduce((sum,e)=>sum+(isCardio(e.exercise)?1:e.sets.length),0); }
+
+export function exerciseComplete(entry: Workout['exercises'][number]) {
+  return isCardio(entry.exercise)
+    ? entry.cardio?.done === true
+    : entry.sets.length > 0 && entry.sets.every(set => set.done);
+}
+export function workoutComplete(workout: Workout) {
+  return workout.exercises.length > 0 && workout.exercises.every(exerciseComplete);
+}
+export function finishWorkout(data: Data, workout: Workout): Data {
+  if (!completedEntries(workout)) return data;
+  return {...data, draft: null, sessions: [
+    {...workout, finished: true},
+    ...data.sessions.filter(session => session.id !== workout.id),
+  ]};
+}
+export function reopenWorkout(workout: Workout): Workout {
+  const draft = structuredClone(workout);
+  draft.finished = false;
+  for (const entry of draft.exercises) {
+    for (const set of entry.sets) set.done = false;
+    if (entry.cardio) entry.cardio.done = false;
+  }
+  return draft;
+}

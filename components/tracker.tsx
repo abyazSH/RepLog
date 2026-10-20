@@ -41,7 +41,7 @@ import {
   volume,
   completedSets,
   completedEntries, totalEntries, cardioMinutes, isCardio,
-  exerciseKey,
+  exerciseKey, exerciseComplete, workoutComplete, finishWorkout, reopenWorkout, copyPreviousSets,
   newWorkout,
   stateSchema,
   type Data,
@@ -74,6 +74,7 @@ export default function Tracker({
   const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
 
   const [sharing,setSharing] = useState<{workout:Workout;sample?:boolean}|null>(null);
+  const [completedWorkout, setCompletedWorkout] = useState<Workout | null>(null);
   const [data, setData] = useState<Data>(emptyData);
   const [displayName, setDisplayName] = useState(name);
   const pathname = usePathname();
@@ -227,12 +228,23 @@ export default function Tracker({
       setTab("Latihan");
       return;
     }
-    const prev = recent.find((w) => w.templateId === t.id);
-    setData((d) => ({ ...d, draft: newWorkout(t, prev) }));
+    const current = newWorkout(t);
+    const prev = previousSession(recent, current);
+    setData((d) => ({ ...d, draft: prev ? copyPreviousSets(current, prev) : current }));
     setTab("Latihan");
   }
+  function completeWorkout(w: Workout) {
+    if (!completedEntries(w)) {
+      setError(en ? "Complete at least one set or cardio entry before saving." : "Tandai minimal satu set atau kardio selesai sebelum menyimpan sesi.");
+      return;
+    }
+    setData(d => finishWorkout(d, w));
+    setCompletedWorkout({...w, finished: true});
+    setTab("Riwayat");
+  }
   function updateDraft(w: Workout) {
-    setData((d) => ({ ...d, draft: w }));
+    if (workoutComplete(w)) completeWorkout(w);
+    else setData((d) => ({ ...d, draft: w }));
   }
   const nav = [
     { label: "Beranda", icon: Home },
@@ -250,6 +262,9 @@ export default function Tracker({
     );
   return (
     <div className="app-shell">
+      {completedWorkout && <CompletionPrompt onSkip={()=>setCompletedWorkout(null)} onShare={()=>{
+        setSharing({workout:completedWorkout});setCompletedWorkout(null);
+      }}/>}
       {sharing && <ShareCard workout={sharing.workout} sample={sharing.sample} onClose={()=>setSharing(null)}/>}
       <aside className="sidebar">
         <a
@@ -566,25 +581,7 @@ export default function Tracker({
                     workout={data.draft}
                     history={recent.filter((s) => s.id !== data.draft?.id)}
                     onChange={updateDraft}
-                    onFinish={() => {
-                      const w = data.draft!;
-                      if (!completedEntries(w)) {
-                        setError(
-                          locale === "en-US" ? "Complete at least one set or cardio entry before saving." : "Tandai minimal satu set atau kardio selesai sebelum menyimpan sesi.",
-                        );
-                        return;
-                      }
-                      setData((d) => ({
-                        ...d,
-                        draft: null,
-                        sessions: [
-                          { ...w, finished: true },
-                          ...d.sessions.filter((s) => s.id !== w.id),
-                        ],
-                      }));
-                      setSharing({workout:{...w,finished:true}});
-                      setTab("Riwayat");
-                    }}
+                    onFinish={() => completeWorkout(data.draft!)}
                     onDiscard={() => {
                       if (confirm(tr("Hapus draf latihan ini?")))
                         setData((d) => ({ ...d, draft: null }));
@@ -635,10 +632,8 @@ export default function Tracker({
                       );
                       return;
                     }
-                    setData((d) => ({
-                      ...d,
-                      draft: { ...structuredClone(w), finished: false },
-                    }));
+                    if (!confirm(en ? "Reopen this session for corrections? Values are kept, but you will need to mark the sets and cardio as completed again." : "Buka sesi untuk koreksi? Angka tetap tersimpan, tetapi set dan kardio perlu dicentang ulang setelah diperiksa.")) return;
+                    setData((d) => ({ ...d, draft: reopenWorkout(w) }));
                     setTab("Latihan");
                   }}
                   onDelete={(id) => {
@@ -719,6 +714,10 @@ function WorkoutEditor({
   const [message, setMessage] = useState("");
   const timer = useRestTimer(w.id);
   const previous = previousSession(history, w);
+  function changeWorkout(next: Workout) {
+    if (workoutComplete(next)) timer.clear();
+    onChange(next);
+  }
   function setAt(
     ei: number,
     si: number,
@@ -727,6 +726,7 @@ function WorkoutEditor({
   ) {
     const next = structuredClone(w);
     const set = next.exercises[ei].sets[si];
+    if (set.done && !(field === "done" && value === false)) return;
     if (field === "done") {
       if (
         value &&
@@ -747,7 +747,7 @@ function WorkoutEditor({
       set.done = false;
     }
     setMessage("");
-    onChange(next);
+    changeWorkout(next);
   }
   return (
     <div className="workout-layout">
@@ -766,11 +766,19 @@ function WorkoutEditor({
           </p>
         ))}
         <RestTimer timer={timer} />
-        <div className="previous-session panel"><Activity size={20}/><div><strong>{tr(previous ? `Acuan ${previous.name} terakhir · ${new Date(previous.date).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}` : `Sesi ${w.name} pertamamu`)}</strong><p>{tr(previous ? 'Beban dan repetisi set yang selesai ditampilkan di setiap gerakan. Gunakan sebagai acuan, lalu isi hasil latihan hari ini.' : 'Belum ada sesi sebelumnya. Catatan hari ini akan menjadi acuan latihan berikutnya.')}</p></div></div>
+        <div className="previous-session panel"><Activity size={20}/><div><strong>{tr(previous ? `Acuan ${previous.name} terakhir · ${new Date(previous.date).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}` : `Sesi ${w.name} pertamamu`)}</strong><p>{tr(previous ? (locale === 'en-US' ? 'New sessions use the last session’s completed sets, loads and reps. Use the button below to apply them to an existing draft.' : 'Sesi baru memakai jumlah set selesai, beban, dan repetisi sesi terakhir. Gunakan tombol di bawah untuk menerapkannya pada draf yang sudah aktif.') : 'Belum ada sesi sebelumnya. Catatan hari ini akan menjadi acuan latihan berikutnya.')}</p>
+          {previous && previous.exercises.some(p=>!isCardio(p.exercise) && p.sets.some(set=>set.done) && w.exercises.some(e=>exerciseKey(e.exercise)===exerciseKey(p.exercise))) && <button className="secondary" onClick={()=>{
+            if (!confirm(locale === "en-US" ? "Replace the current strength sets with the last session’s set counts, loads and reps? Completion checks will be cleared; cardio and notes stay unchanged." : "Ganti isian set latihan beban dengan jumlah set, beban, dan repetisi sesi terakhir? Centang set akan dikosongkan; kardio dan catatan tetap tersimpan.")) return;
+            timer.clear();
+            onChange(copyPreviousSets(w, previous));
+            setMessage("");
+          }}>{locale === "en-US" ? "Use last session’s values" : "Gunakan isian sesi terakhir"}</button>}
+        </div></div>
         {w.exercises.map((item, ei) => {
           const e = item.exercise;
+          const locked = exerciseComplete(item);
           const last = previous?.exercises.find(h => exerciseKey(h.exercise) === exerciseKey(e));
-          if (isCardio(e)) return <CardioEntry key={e.id} entry={item} previous={last} onChange={entry=>{const next=structuredClone(w);next.exercises[ei]=entry;onChange(next);}}/>;
+          if (isCardio(e)) return <CardioEntry key={e.id} entry={item} previous={last} onChange={entry=>{const next=structuredClone(w);next.exercises[ei]=entry;changeWorkout(next);}}/>;
           return (
             <section className="panel exercise-card" key={ei}>
               <div className="exercise-head">
@@ -786,6 +794,7 @@ function WorkoutEditor({
               </div>
               {e.alternatives.length > 0 && (
                 <label className="variant-label">{tr(" Variasi gerakan ")}<select
+                    disabled={item.sets.some(s => s.done)}
                     value={e.name}
                     onChange={(ev) => {
                       if (
@@ -808,7 +817,7 @@ function WorkoutEditor({
                         reps: "",
                         done: false,
                       }));
-                      onChange(next);
+                      changeWorkout(next);
                     }}
                   >
                     {[e.name, ...e.alternatives].map((n) => (
@@ -817,6 +826,7 @@ function WorkoutEditor({
                   </select>
                 </label>
               )}
+              {locked && <p className="hint" role="status">{locale === "en-US" ? "Exercise completed. Press × next to a checked set to unlock it for corrections." : "Gerakan selesai. Tekan × di sebelah set yang dicentang untuk membuka dan mengeditnya kembali."}</p>}
               <div className="previous">
                 <Activity size={15} />
                 <span>{tr(" Sesi sebelumnya:")}{tr(" ")}
@@ -849,6 +859,7 @@ function WorkoutEditor({
                     max="1500"
                     step="0.5"
                     placeholder={tr("0")}
+                    disabled={s.done}
                     value={s.kg}
                     onChange={(ev) => {
                       if (
@@ -866,6 +877,7 @@ function WorkoutEditor({
                     min="1"
                     max="1000"
                     placeholder={tr(String(e.minReps))}
+                    disabled={s.done}
                     value={s.reps}
                     onChange={(ev) => {
                       if (
@@ -879,6 +891,7 @@ function WorkoutEditor({
                   <button
                     className={s.done ? "check-set checked" : "check-set"}
                     aria-label={tr(`${e.name} set ${si + 1} selesai`)}
+                    disabled={s.done}
                     aria-pressed={s.done}
                     onClick={() => setAt(ei, si, "done", !s.done)}
                   >
@@ -886,9 +899,14 @@ function WorkoutEditor({
                   </button>
                   <button
                     className="icon-button"
-                    disabled={item.sets.length <= 1}
-                    aria-label={tr(`Hapus ${e.name} set ${si + 1}`)}
+                    disabled={!s.done && item.sets.length <= 1}
+                    title={s.done ? (locale === "en-US" ? "Unlock set for editing" : "Buka set untuk diedit") : (locale === "en-US" ? "Delete set" : "Hapus set")}
+                    aria-label={s.done ? `${locale === "en-US" ? "Unlock" : "Buka kunci"} ${e.name} set ${si + 1}` : tr(`Hapus ${e.name} set ${si + 1}`)}
                     onClick={() => {
+                      if (s.done) {
+                        setAt(ei, si, "done", false);
+                        return;
+                      }
                       if (
                         (s.done || s.kg || s.reps) &&
                         !confirm(tr("Hapus set beserta isinya?"))
@@ -896,7 +914,7 @@ function WorkoutEditor({
                         return;
                       const next = structuredClone(w);
                       next.exercises[ei].sets.splice(si, 1);
-                      onChange(next);
+                      changeWorkout(next);
                     }}
                   >
                     <X size={15} />
@@ -905,7 +923,7 @@ function WorkoutEditor({
               ))}
               <button
                 className="add-set"
-                disabled={item.sets.length >= 10}
+                disabled={locked || item.sets.length >= 10}
                 onClick={() => {
                   const next = structuredClone(w);
                   next.exercises[ei].sets.push({
@@ -913,7 +931,7 @@ function WorkoutEditor({
                     reps: "",
                     done: false,
                   });
-                  onChange(next);
+                  changeWorkout(next);
                 }}
               >
                 <Plus size={16} />{tr(" Tambah set ")}</button>
@@ -946,7 +964,7 @@ function WorkoutEditor({
             onChange={(ev) => onChange({ ...w, notes: ev.target.value })}
           />
         </label>
-        <p className="hint">{locale === "en-US" ? "Mark completed sets and cardio entries. Only completed entries appear in progress." : "Tandai set dan kardio yang selesai. Grafik hanya menghitung catatan yang ditandai."}</p>
+        <p className="hint">{locale === "en-US" ? "Check a set to lock its values; press × to unlock it. The session finishes automatically when every exercise is complete." : "Centang set untuk mengunci angkanya; tekan × untuk membuka kembali. Sesi otomatis selesai saat seluruh gerakan tuntas."}</p>
         <button className="primary" onClick={() => { if (completedEntries(w)) timer.clear(); onFinish(); }}>
           <Check size={18} />{tr(" Selesaikan latihan ")}</button>
         <button className="text-button danger" onClick={onDiscard}>
@@ -1370,4 +1388,26 @@ function Profile({
       )}
     </>
   );
+}
+
+function CompletionPrompt({onShare, onSkip}: {onShare: () => void; onSkip: () => void}) {
+  const {locale} = useLanguage();
+  const en = locale === "en-US";
+  const dialog = useRef<HTMLDialogElement>(null);
+  const title = useId();
+  useEffect(() => {
+    const element = dialog.current;
+    const previous = document.activeElement as HTMLElement | null;
+    element?.showModal();
+    return () => { element?.close(); if (previous?.isConnected) previous.focus(); };
+  }, []);
+  return <dialog ref={dialog} className="share-dialog panel" aria-labelledby={title} onCancel={onSkip}>
+    <span className="eyebrow">{en ? "SESSION COMPLETED" : "SESI SELESAI"}</span>
+    <h2 id={title}>{en ? "Share your workout?" : "Ingin membagikan hasil latihan?"}</h2>
+    <p>{en ? "Your session is added to History whether you share it or not. Sharing is optional." : "Sesi masuk ke Riwayat, baik dibagikan maupun tidak. Kamu bebas memilih."}</p>
+    <div className="button-row">
+      <button className="secondary" autoFocus onClick={onSkip}>{en ? "Just finish" : "Selesai saja"}</button>
+      <button className="primary" onClick={onShare}>{en ? "Share results" : "Bagikan hasil"}<ArrowUpRight size={18}/></button>
+    </div>
+  </dialog>;
 }

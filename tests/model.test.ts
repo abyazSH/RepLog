@@ -45,7 +45,7 @@ test("new session copies loads without copying completion and snapshots survive 
   first.exercises[0].sets[0] = { kg: "35", reps: "12", done: true };
   const second = newWorkout(template, first);
   assert.equal(second.exercises[0].sets[0].kg, "35");
-  assert.equal(second.exercises[0].sets[0].reps, "");
+  assert.equal(second.exercises[0].sets[0].reps, "12");
   assert.equal(second.exercises[0].sets[0].done, false);
   template.exercises[0].name = "Changed machine";
   assert.equal(first.exercises[0].exercise.name, "Lat Pulldown");

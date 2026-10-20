@@ -8,6 +8,8 @@ export const exerciseSchema = z
     kind: z.enum(["C", "I"]),
     tracking: z.enum(["strength", "treadmill", "bike"]).optional(),
     targetMinutes: z.number().positive().max(600).optional(),
+    targetSpeedKmh: z.number().positive().max(50).optional(),
+    targetInclinePercent: z.number().min(0).max(40).optional(),
     minSets: z.number().int().min(1).max(10),
     maxSets: z.number().int().min(1).max(10),
     minReps: z.number().int().min(1).max(100),

@@ -608,7 +608,7 @@ export default function Tracker({
                             <div key={e.id}>
                               <span>{e.name}</span>
                               <small>
-                                {isCardio(e) ? `${e.targetMinutes ?? "—"} min` : <>{tr(e.minSets === e.maxSets
+                                {isCardio(e) ? `${e.targetMinutes ?? "—"} min${e.tracking==="treadmill" && e.targetSpeedKmh ? ` · ${e.targetSpeedKmh} km/h` : ""}${e.tracking==="treadmill" && e.targetInclinePercent != null ? ` · ${e.targetInclinePercent}%` : ""}` : <>{tr(e.minSets === e.maxSets
                                   ? e.minSets
                                   : `${e.minSets}–${e.maxSets}`)}{tr(" ")}
                                 × {e.minReps}–{e.maxReps}</> }
@@ -1319,8 +1319,9 @@ function Profile({
                   <Trash2 size={17} />
                 </button>
               </div>
-              <label>{text("Jenis pencatatan", "Tracking type")}<select value={e.tracking??"strength"} onChange={event=>{const tracking=event.target.value as "strength"|"treadmill"|"bike";setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,tracking,targetMinutes:tracking==="strength"?undefined:x.targetMinutes??20,alternatives:tracking==="strength"?x.alternatives:[]}:x)});}}><option value="strength">{text("Latihan beban","Strength training")}</option><option value="treadmill">Treadmill</option><option value="bike">{text("Sepeda gym","Stationary bike")}</option></select></label>
-              {isCardio(e) ? <label>{text("Target durasi (menit)","Target duration (minutes)")}<input type="number" min="1" max="600" step="any" value={e.targetMinutes??20} onChange={event=>setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,targetMinutes:Number(event.target.value)}:x)})}/></label> : <>
+              <label>{text("Jenis pencatatan", "Tracking type")}<select value={e.tracking??"strength"} onChange={event=>{const tracking=event.target.value as "strength"|"treadmill"|"bike";setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,tracking,targetMinutes:tracking==="strength"?undefined:x.targetMinutes??20,targetSpeedKmh:tracking==="treadmill"?x.targetSpeedKmh:undefined,targetInclinePercent:tracking==="treadmill"?x.targetInclinePercent:undefined,alternatives:tracking==="strength"?x.alternatives:[]}:x)});}}><option value="strength">{text("Latihan beban","Strength training")}</option><option value="treadmill">Treadmill</option><option value="bike">{text("Sepeda gym","Stationary bike")}</option></select></label>
+              {isCardio(e) ? <><label>{text("Target durasi (menit)","Target duration (minutes)")}<input type="number" min="1" max="600" step="any" value={e.targetMinutes??20} onChange={event=>setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,targetMinutes:Number(event.target.value)}:x)})}/></label>
+              {e.tracking==="treadmill" && <div className="target-fields"><label>{text("Target Speed (km/h)","Target Speed (km/h)")}<input type="number" min="0.1" max="50" step="any" placeholder="6.0" value={e.targetSpeedKmh??""} onChange={event=>setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,targetSpeedKmh:event.target.value===""?undefined:Number(event.target.value)}:x)})}/></label><label>{text("Target Incline (%)","Target Incline (%)")}<input type="number" min="0" max="40" step="any" placeholder="0" value={e.targetInclinePercent??""} onChange={event=>setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,targetInclinePercent:event.target.value===""?undefined:Number(event.target.value)}:x)})}/></label></div>}</> : <>
               <label>{text("Jenis gerakan", "Exercise type")}<select value={e.kind} onChange={event=>setEditing({...editing,exercises:editing.exercises.map((x,j)=>j===i?{...x,kind:event.target.value as "C"|"I"}:x)})}><option value="C">Compound</option><option value="I">Isolation</option></select></label>
               <div className="target-fields">
                 {(["minSets", "maxSets", "minReps", "maxReps"] as const).map(

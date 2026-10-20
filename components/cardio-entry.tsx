@@ -16,7 +16,7 @@ export default function CardioEntry({entry,previous,onChange}:{entry:Workout['ex
     setError('');onChange(next);
   }
   return <section className="panel exercise-card cardio-entry">
-    <div className="exercise-head"><span className="exercise-number"><Activity size={20}/></span><div><h3>{entry.exercise.name}</h3><p>{treadmill?'Treadmill':en?'Stationary bike':'Sepeda gym'}{entry.exercise.targetMinutes?` · ${en?'Target':'Target'} ${entry.exercise.targetMinutes} min`:''}</p></div></div>
+    <div className="exercise-head"><span className="exercise-number"><Activity size={20}/></span><div><h3>{entry.exercise.name}</h3><p>{treadmill?'Treadmill':en?'Stationary bike':'Sepeda gym'}{entry.exercise.targetMinutes?` · ${en?'Target':'Target'} ${entry.exercise.targetMinutes} min`:''}{treadmill && entry.exercise.targetSpeedKmh?` · ${entry.exercise.targetSpeedKmh} km/h`:''}{treadmill && entry.exercise.targetInclinePercent!=null?` · ${entry.exercise.targetInclinePercent}% incline`:''}</p></div></div>
     <div className="previous"><Activity size={15}/><span>{en?'Previous session: ':'Sesi sebelumnya: '}{previous?cardioSummary(previous,locale):en?'No previous record':'Belum ada catatan'}</span></div>
     <div className="cardio-fields">{fieldsFor(entry.exercise.tracking).map(f=><label key={f.key}>{en?f.en:f.id}{!treadmill&&f.key!=='durationMinutes'&&<small> · {en?'optional':'opsional'}</small>}<input disabled={c.done} type="number" inputMode="decimal" step="any" min={f.key==='durationMinutes'||f.key==='speedKmh'?0.01:0} max={f.max} value={c[f.key]} placeholder={f.key==='durationMinutes'?'20':'0'} aria-label={`${entry.exercise.name} ${en?f.en:f.id}`} onChange={event=>{
       if(c.done)return;

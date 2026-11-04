@@ -1693,6 +1693,7 @@ textarea::placeholder {
 }
 
 .auth-form{display:grid;gap:16px;width:100%;margin:24px 0 14px}.auth-form label{display:grid;gap:8px;text-align:left}.auth-form input{width:100%;min-width:0;padding:12px;border:1px solid #46503b;border-radius:8px;background:#151a13;color:#fff;font:inherit}.auth-form input:focus{outline:2px solid #c5ef72;outline-offset:2px}.auth-form small{color:#aab3a0}
+.recovery-fields { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .rest-visual { --timer-accent: #c7f76b; max-width: 520px; background: linear-gradient(150deg,#20251f,#141914); border: 1px solid #394333; border-radius: 24px; }
 .rest-visual.is-paused { --timer-accent: #ffd35c; }
 .rest-visual .rest-state { font-size: .68rem; font-weight: 800; letter-spacing: .08em; border: 1px solid var(--timer-accent); border-radius: 20px; padding: 7px 11px; color: var(--timer-accent); }
@@ -1806,6 +1807,8 @@ textarea::placeholder {
 .cardio-fields label { min-width:0; }
 .cardio-fields small { color:var(--muted); font-size:.7rem; }
 .cardio-entry .previous { overflow-wrap:anywhere; }
+.cardio-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.cardio-actions .primary,.cardio-actions .secondary { min-width:0; padding:12px 8px; white-space:normal; }
 .cardio-entry .hint { margin:16px 0; line-height:1.65; }
 .cardio-entry .primary,.cardio-entry .secondary { width:100%; }
 .exercise-progress > label { margin-top:16px; }

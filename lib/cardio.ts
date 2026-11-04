@@ -1,4 +1,4 @@
-import { isCardio, type Cardio, type Data, type Workout } from './model';
+import { emptyCardio, isCardio, type Cardio, type Data, type Workout } from './model';
 export const cardioFields = [
   {key:'durationMinutes',id:'Durasi (menit)',en:'Duration (minutes)',unit:'min',max:600},
   {key:'speedKmh',id:'Speed (km/jam)',en:'Speed (km/h)',unit:'km/h',max:50},
@@ -13,10 +13,16 @@ export function fieldsFor(type: string | undefined) {
     ? ['durationMinutes','speedKmh','inclinePercent'].includes(f.key)
     : ['durationMinutes','resistance','distanceKm','cadenceRpm','watts'].includes(f.key));
 }
+export function setTreadmillParticipation(entry: Workout['exercises'][number], performed: boolean): Workout['exercises'][number] {
+  if(entry.exercise.tracking !== 'treadmill' || entry.cardio?.done) return entry;
+  if(performed) return entry.cardio?.skipped ? {...entry,cardio:emptyCardio()} : entry;
+  return {...entry,cardio:{...emptyCardio(),durationMinutes:'0',speedKmh:'0',inclinePercent:'0',skipped:true}};
+}
 export function cardioSummary(entry: Workout['exercises'][number], locale: string) {
   if(!isCardio(entry.exercise) || !entry.cardio?.done) return locale==='en-US'?'Not completed':'Tidak diselesaikan';
   const fmt=new Intl.NumberFormat(locale,{maximumFractionDigits:2});
-  return fieldsFor(entry.exercise.tracking).filter(f=>entry.cardio![f.key]!=='').map(f=>`${f.key==='resistance' ? (locale==='en-US'?'Resistance ':'Resistance ') : ''}${fmt.format(Number(entry.cardio![f.key]))} ${f.unit}`).join(' · ');
+  const values=fieldsFor(entry.exercise.tracking).filter(f=>entry.cardio![f.key]!=='').map(f=>`${f.key==='resistance' ? (locale==='en-US'?'Resistance ':'Resistance ') : ''}${fmt.format(Number(entry.cardio![f.key]))} ${f.unit}`).join(' · ');
+  return entry.cardio.skipped ? `${locale==='en-US'?'Not performed':'Tidak dilakukan'} · ${values}` : values;
 }
 export function cardioProgress(data: Data, templateId: string) {
   const entries=new Map<string,{name:string;tracking:string;points:{date:string;cardio:Cardio}[]}>();

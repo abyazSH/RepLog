@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {canOpenDashboard,isGuestRoute,type GuestAuthClient} from '../lib/guest-access';
 test('only the landing and auth pages redirect to dashboard',()=>{
  for(const path of ['/','/login','/register'])assert.equal(isGuestRoute(path),true);
- for(const path of ['/dashboard','/workouts','/auth/callback','/api/data','/demo'])assert.equal(isGuestRoute(path),false);
+ for(const path of ['/dashboard','/workouts','/auth/callback','/auth/recovery','/forgot-password','/reset-password','/api/data','/demo'])assert.equal(isGuestRoute(path),false);
 });
 test('guest guard validates identity and dashboard access, preventing denied-account loops',async()=>{
  let calls=0;

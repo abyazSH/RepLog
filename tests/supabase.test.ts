@@ -83,12 +83,15 @@ test("Supabase migration: permissions, RLS, email identity and atomic revisions"
       template.exercises[0]={...template.exercises[0],tracking:"treadmill",targetMinutes:20};
       const workout=newWorkout(template);workout.finished=true;
       workout.exercises[0].cardio={...workout.exercises[0].cardio!,durationMinutes:"20",speedKmh:"6",inclinePercent:"5",done:true};
-      state.sessions=[workout];stateSchema.parse(state);
+      const skipped=structuredClone(workout);skipped.id+='-skipped';
+      skipped.exercises[0].cardio={...skipped.exercises[0].cardio!,durationMinutes:"0",speedKmh:"0",inclinePercent:"0",skipped:true};
+      state.sessions=[workout,skipped];stateSchema.parse(state);
       await db.query("select public.replog_save_state($1,$2::jsonb)",[3,JSON.stringify(state)]);
       const row=(await db.query<{data:unknown}>("select data from public.workout_state")).rows[0];
       const loaded=stateSchema.parse(row.data);
       assert.equal(loaded.sessions[0].exercises[0].cardio?.speedKmh,"6");
       assert.equal(loaded.templates[0].exercises[0].tracking,"treadmill");
+      assert.deepEqual(loaded.sessions[1].exercises[0].cardio,skipped.exercises[0].cardio);
     });
     await t.test(
       "direct writes and reading the invitation list are denied",

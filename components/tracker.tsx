@@ -40,7 +40,7 @@ import {
   emptyData,
   volume,
   completedSets,
-  completedEntries, totalEntries, cardioMinutes, isCardio,
+  recordedEntries, totalEntries, cardioMinutes, isCardio,
   exerciseKey, exerciseComplete, workoutComplete, finishWorkout, reopenWorkout, copyPreviousSets,
   newWorkout,
   stateSchema,
@@ -234,8 +234,8 @@ export default function Tracker({
     setTab("Latihan");
   }
   function completeWorkout(w: Workout) {
-    if (!completedEntries(w)) {
-      setError(en ? "Complete at least one set or cardio entry before saving." : "Tandai minimal satu set atau kardio selesai sebelum menyimpan sesi.");
+    if (!recordedEntries(w)) {
+      setError(en ? "Confirm at least one set or cardio record before saving." : "Konfirmasi minimal satu set atau catatan kardio sebelum menyimpan sesi.");
       return;
     }
     setData(d => finishWorkout(d, w));
@@ -758,7 +758,7 @@ function WorkoutEditor({
             <h2>{w.name}</h2>
           </div>
           <span className="tag lime">
-            {completedEntries(w)} / {totalEntries(w)} {locale === "en-US" ? "completed" : "selesai"}</span>
+            {recordedEntries(w)} / {totalEntries(w)} {locale === "en-US" ? "recorded" : "tercatat"}</span>
         </div>
         {tr(message && (
           <p role="alert" className="error">
@@ -943,12 +943,12 @@ function WorkoutEditor({
         <span className="eyebrow">{tr("RINGKASAN SESI")}</span>
         <h2>{w.name}</h2>
         <div className="summary-number">
-          {completedEntries(w)} <small>{locale === "en-US" ? "completed entries" : "bagian selesai"}</small>
+          {recordedEntries(w)} <small>{locale === "en-US" ? "recorded entries" : "bagian tercatat"}</small>
         </div>
         <div className="progress-track">
           <span
             style={{
-              width: `${(completedEntries(w) / totalEntries(w)) * 100}%`,
+              width: `${(recordedEntries(w) / totalEntries(w)) * 100}%`,
             }}
           />
         </div>
@@ -965,7 +965,7 @@ function WorkoutEditor({
           />
         </label>
         <p className="hint">{locale === "en-US" ? "Check a set to lock its values; press × to unlock it. The session finishes automatically when every exercise is complete." : "Centang set untuk mengunci angkanya; tekan × untuk membuka kembali. Sesi otomatis selesai saat seluruh gerakan tuntas."}</p>
-        <button className="primary" onClick={() => { if (completedEntries(w)) timer.clear(); onFinish(); }}>
+        <button className="primary" onClick={() => { if (recordedEntries(w)) timer.clear(); onFinish(); }}>
           <Check size={18} />{tr(" Selesaikan latihan ")}</button>
         <button className="text-button danger" onClick={onDiscard}>
           <Trash2 size={15} />{tr(" Hapus draf ")}</button>
@@ -1093,10 +1093,21 @@ function Progress({
 function CardioGraph({chart}:{chart:ReturnType<typeof cardioProgress>[number]}) {
  const {language,fmt}=useLanguage();const en=language==="en";const [metric,setMetric]=useState("durationMinutes");
  const fields=fieldsFor(chart.tracking);const field=fields.find(f=>f.key===metric)??fields[0];
- const points=chart.points.filter(p=>p.cardio[field.key]!=="").map(p=>({date:p.date,value:Number(p.cardio[field.key])}));
- return <article className="exercise-progress"><div className="section-title"><h3>{chart.name}</h3><span className="tag">{en?"Cardio":"Kardio"}</span></div><label>{en?"Metric":"Metrik"}<select value={field.key} onChange={event=>setMetric(event.target.value)}>{fields.map(f=><option key={f.key} value={f.key}>{en?f.en:f.id}</option>)}</select></label>{points.length?<><p className="muted">{en?"Latest":"Terakhir"}: {fmt(points[points.length-1].value)} {field.unit}</p><Chart points={points} name={chart.name} unit={field.unit}/></>:<div className="chart-empty"><Activity size={28}/><p>{en?"No completed records for this metric yet.":"Belum ada catatan selesai untuk metrik ini."}</p></div>}</article>;
+ const treadmill=chart.tracking==="treadmill";
+ const points=chart.points.filter(p=>p.cardio[field.key]!=="").map(p=>({date:p.date,value:Number(p.cardio[field.key]),status:treadmill?(p.cardio.skipped?(en?"Not performed":"Tidak dilakukan"):(en?"Performed":"Dilakukan")):undefined}));
+ const skipped=chart.points.filter(p=>p.cardio.skipped).length;
+ const latest=points.at(-1);
+ return <article className="exercise-progress">
+   <div className="section-title"><h3>{chart.name}</h3><span className="tag">{en?"Cardio":"Kardio"}</span></div>
+   <label>{en?"Metric":"Metrik"}<select value={field.key} onChange={event=>setMetric(event.target.value)}>{fields.map(f=><option key={f.key} value={f.key}>{en?f.en:f.id}</option>)}</select></label>
+   {latest?<>
+     {treadmill&&<p className="muted">{en?"Records shown — performed":"Catatan ditampilkan — dilakukan"}: {chart.points.length-skipped} · {en?"not performed":"tidak dilakukan"}: {skipped}</p>}
+     <p className="muted">{en?"Latest":"Terakhir"}: {fmt(latest.value)} {field.unit}{latest.status?` · ${latest.status}`:""}</p>
+     <Chart points={points} name={chart.name} unit={field.unit}/>
+   </>:<div className="chart-empty"><Activity size={28}/><p>{en?"No confirmed records for this metric yet.":"Belum ada catatan terkonfirmasi untuk metrik ini."}</p></div>}
+ </article>;
 }
-function Chart({ points, name, unit }: { points: { date: string; value: number }[]; name: string; unit:string }) {
+function Chart({ points, name, unit }: { points: { date: string; value: number; status?:string }[]; name: string; unit:string }) {
   const { t: tr, locale, fmt, dateLabel, days } = useLanguage();
 
   const gradientId = useId();
@@ -1145,7 +1156,7 @@ function Chart({ points, name, unit }: { points: { date: string; value: number }
           <g key={i}>
             <circle cx={x(i)} cy={y(p.value)} r="5" fill="#c7f76b">
               <title>
-                {tr(dateLabel(p.date))}: {p.value} {unit}</title>
+                {tr(dateLabel(p.date))}: {p.value} {unit}{p.status?` · ${p.status}`:""}</title>
             </circle>
             {(i === 0 || i === Math.floor((points.length - 1) / 2) || i === points.length - 1) && (
               <text
@@ -1165,7 +1176,7 @@ function Chart({ points, name, unit }: { points: { date: string; value: number }
         <summary>{tr("Lihat angka grafik")}</summary>
         {points.map((p, i) => (
           <p key={i}>
-            {tr(dateLabel(p.date))}: {tr(fmt(p.value))}{tr(" kg ")}</p>
+            {tr(dateLabel(p.date))}: {tr(fmt(p.value))} {unit}{p.status?` · ${p.status}`:""}</p>
         ))}
       </details>
     </div>

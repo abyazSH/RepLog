@@ -69,6 +69,15 @@ test('cardio sessions count toward consistency but not strength sets, volume or 
   const stats=dashboardStats(data(cardio),now);
   assert.equal(stats.sessions,1);assert.equal(stats.sets,0);assert.equal(stats.volumeKg,0);assert.equal(stats.comparedExercises,0);
 });
+test('skipped-only treadmill records do not inflate consistency but mixed activity still counts',()=>{
+  const skipped=session(5);skipped.exercises[0].exercise.tracking='treadmill';skipped.exercises[0].sets=[];
+  skipped.exercises[0].cardio={durationMinutes:'0',speedKmh:'0',inclinePercent:'0',resistance:'',distanceKm:'',cadenceRpm:'',watts:'',skipped:true,done:true};
+  const stats=dashboardStats(data(skipped),now);
+  assert.equal(stats.sessions,0);assert.equal(stats.goalPercent,0);assert.equal(stats.sets,0);assert.equal(stats.volumeKg,0);
+  skipped.exercises.push(session(5).exercises[0]);
+  const mixed=dashboardStats(data(skipped),now);
+  assert.equal(mixed.sessions,1);assert.equal(mixed.sets,1);assert.equal(mixed.volumeKg,300);
+});
 test('Monday starts a new local week even at midnight',()=>{
   const state=data(session(4,30,10,1,23),session(5,30,10,1,0));
   const stats=dashboardStats(state,new Date(2026,9,5,0));

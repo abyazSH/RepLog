@@ -1,4 +1,4 @@
-import {completedSets,exerciseKey,isCardio,volume,type Data,type Workout} from './model';
+import {completedEntries,completedSets,exerciseKey,isCardio,volume,type Data,type Workout} from './model';
 
 type Performance = {kg:number;reps:number};
 function bestSet(entries: Workout['exercises']): Performance | null {
@@ -16,7 +16,7 @@ export function dashboardStats(data:Data,now=new Date()) {
   const previousStart=new Date(weekStart);previousStart.setDate(previousStart.getDate()-7);
   // Match local weekday and time, including daylight saving transitions.
   const previousEnd=new Date(now);previousEnd.setDate(previousEnd.getDate()-7);
-  const history=data.sessions.filter(w=>w.finished&&new Date(w.date)<=now).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const history=data.sessions.filter(w=>w.finished&&completedEntries(w)>0&&new Date(w.date)<=now).slice().sort((a,b)=>a.date.localeCompare(b.date));
   const week=history.filter(w=>new Date(w.date)>=weekStart);
   const previousWeek=history.filter(w=>new Date(w.date)>=previousStart&&new Date(w.date)<=previousEnd);
   const sets=week.reduce((sum,w)=>sum+completedSets(w),0);

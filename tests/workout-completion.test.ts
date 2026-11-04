@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyData, newWorkout, exerciseComplete, workoutComplete, finishWorkout, reopenWorkout, stateSchema, emptyCardio, copyPreviousSets} from '../lib/model';
+import {emptyData, newWorkout, exerciseComplete, workoutComplete, finishWorkout, reopenWorkout, stateSchema, emptyCardio, copyPreviousSets, completedEntries, recordedEntries, type Template} from '../lib/model';
 
 function session() {
   const data = emptyData();
@@ -9,6 +9,18 @@ function session() {
     entry.sets = [{kg: '20', reps: '12', done: true}];
   }
   return {data, workout};
+}
+
+function skippedSession() {
+  const data = emptyData();
+  const template: Template = {...data.templates[0], id:'treadmill', name:'Treadmill', exercises:[{
+    ...data.templates[0].exercises[0], id:'treadmill', name:'Treadmill', tracking:'treadmill',
+  }]};
+  data.templates = [template];
+  const workout = newWorkout(template);
+  workout.exercises[0].cardio = {...emptyCardio(), durationMinutes:'0', speedKmh:'0', inclinePercent:'0', skipped:true, done:false};
+  data.draft = workout;
+  return {data, workout, template};
 }
 
 test('new workouts copy the previous set count, loads and reps while leaving completion unchecked', () => {
@@ -90,6 +102,99 @@ test('manual early finish is allowed, but a session without completed entries is
   workout.exercises[0].sets[0] = {kg:'0', reps:'10', done:true};
   assert.equal(workoutComplete(workout), false);
   assert.equal(finishWorkout(data, workout).sessions[0].finished, true);
+});
+
+test('a skipped treadmill resolves completion only after its record is confirmed', () => {
+  const {workout} = session();
+  const skipped = skippedSession().workout.exercises[0];
+  workout.exercises.push(skipped);
+  assert.equal(exerciseComplete(skipped), false);
+  assert.equal(workoutComplete(workout), false);
+  const performedCount = completedEntries(workout);
+  assert.equal(recordedEntries(workout), performedCount);
+  skipped.cardio!.done = true;
+  assert.equal(exerciseComplete(skipped), true);
+  assert.equal(workoutComplete(workout), true);
+  assert.equal(completedEntries(workout), performedCount);
+  assert.equal(recordedEntries(workout), performedCount + 1);
+  workout.exercises[0].sets[0].done = false;
+  assert.equal(workoutComplete(workout), false);
+});
+
+test('skip-only sessions require confirmation to save and retain zeros when reopened', () => {
+  const {data, workout} = skippedSession();
+  workout.notes = 'Treadmill unavailable';
+  assert.equal(stateSchema.safeParse(data).success, true);
+  assert.equal(completedEntries(workout), 0);
+  assert.equal(recordedEntries(workout), 0);
+  assert.equal(workoutComplete(workout), false);
+  assert.strictEqual(finishWorkout(data, workout), data);
+  assert.equal(data.draft, workout);
+  assert.equal(data.sessions.length, 0);
+
+  workout.exercises[0].cardio!.done = true;
+  assert.equal(workoutComplete(workout), true);
+  assert.equal(completedEntries(workout), 0);
+  assert.equal(recordedEntries(workout), 1);
+  const before = structuredClone(data);
+  const finished = finishWorkout(data, workout);
+  assert.notStrictEqual(finished, data);
+  assert.equal(finished.draft, null);
+  assert.equal(finished.sessions.length, 1);
+  const saved = finished.sessions[0];
+  assert.deepEqual(saved, {...workout, finished:true});
+  assert.equal(stateSchema.safeParse(finished).success, true);
+  assert.deepEqual(stateSchema.parse(JSON.parse(JSON.stringify(finished))), finished);
+  assert.equal(finishWorkout(finished, workout).sessions.length, 1);
+  assert.deepEqual(data, before);
+
+  const savedBefore = structuredClone(saved);
+  const reopened = reopenWorkout(saved);
+  assert.notStrictEqual(reopened, saved);
+  assert.notStrictEqual(reopened.exercises[0].cardio, saved.exercises[0].cardio);
+  assert.equal(reopened.id, saved.id);
+  assert.equal(reopened.date, saved.date);
+  assert.equal(reopened.notes, saved.notes);
+  assert.equal(reopened.finished, false);
+  assert.deepEqual(reopened.exercises[0].cardio, {...saved.exercises[0].cardio!, done:false});
+  assert.equal(reopened.exercises[0].cardio!.skipped, true);
+  assert.equal(reopened.exercises[0].cardio!.durationMinutes, '0');
+  assert.equal(reopened.exercises[0].cardio!.speedKmh, '0');
+  assert.equal(reopened.exercises[0].cardio!.inclinePercent, '0');
+  assert.equal(exerciseComplete(reopened.exercises[0]), false);
+  assert.equal(workoutComplete(reopened), false);
+  assert.equal(completedEntries(reopened), 0);
+  assert.equal(recordedEntries(reopened), 0);
+  const editing = {...finished, draft:reopened};
+  assert.equal(stateSchema.safeParse(editing).success, true);
+  assert.strictEqual(finishWorkout(editing, reopened), editing);
+  assert.deepEqual(saved, savedBefore);
+
+  reopened.exercises[0].cardio!.done = true;
+  const resaved = finishWorkout(editing, reopened);
+  assert.equal(resaved.sessions.length, 1);
+  assert.equal(resaved.sessions[0].id, saved.id);
+  assert.equal(resaved.sessions[0].exercises[0].cardio!.skipped, true);
+  assert.equal(resaved.draft, null);
+  assert.equal(workoutComplete(resaved.sessions[0]), true);
+  assert.equal(stateSchema.safeParse(resaved).success, true);
+  assert.deepEqual(saved, savedBefore);
+});
+
+test('new workouts reset skipped participation and zero metrics without changing history', () => {
+  const {workout, template} = skippedSession();
+  workout.exercises[0].cardio!.done = true;
+  workout.finished = true;
+  const before = structuredClone(workout);
+  const fresh = newWorkout(template, workout);
+  assert.notEqual(fresh.id, workout.id);
+  assert.equal(fresh.finished, false);
+  assert.deepEqual(fresh.exercises[0].cardio, emptyCardio());
+  assert.equal(Object.hasOwn(fresh.exercises[0].cardio!, 'skipped'), false);
+  assert.equal(workoutComplete(fresh), false);
+  assert.equal(completedEntries(fresh), 0);
+  assert.equal(recordedEntries(fresh), 0);
+  assert.deepEqual(workout, before);
 });
 
 test('history corrections unlock entries without changing values or the stored session', () => {

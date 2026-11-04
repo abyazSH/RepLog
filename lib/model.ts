@@ -52,7 +52,7 @@ const setSchema = z
 const cardioNumber = (max: number) => z.string().max(12).refine(v => v === "" || (/^\d+(\.\d+)?$/.test(v) && Number(v) <= max), "Angka kardio tidak valid");
 export const cardioSchema = z.object({
   durationMinutes: cardioNumber(600), speedKmh: cardioNumber(50), inclinePercent: cardioNumber(40),
-  resistance: cardioNumber(1000), distanceKm: cardioNumber(500), cadenceRpm: cardioNumber(300), watts: cardioNumber(3000), done: z.boolean(),
+  resistance: cardioNumber(1000), distanceKm: cardioNumber(500), cadenceRpm: cardioNumber(300), watts: cardioNumber(3000), done: z.boolean(), skipped: z.boolean().optional(),
 });
 export type Cardio = z.infer<typeof cardioSchema>;
 export const isCardio = (e: Exercise) => e.tracking === "treadmill" || e.tracking === "bike";
@@ -61,6 +61,7 @@ export const entrySchema = z.object({exercise:exerciseSchema,sets:z.array(setSch
   if(!isCardio(entry.exercise)) return entry.sets.length > 0 && !entry.cardio;
   if(entry.sets.length || !entry.cardio) return false;
   const c=entry.cardio;
+  if(c.skipped) return entry.exercise.tracking === "treadmill" && c.durationMinutes === "0" && c.speedKmh === "0" && c.inclinePercent === "0" && [c.resistance,c.distanceKm,c.cadenceRpm,c.watts].every(value=>value==="");
   return !c.done || (Number(c.durationMinutes)>0 && (entry.exercise.tracking !== "treadmill" || (Number(c.speedKmh)>0 && c.inclinePercent!=="")));
 }, "Isi durasi; treadmill juga memerlukan speed dan incline. Latihan beban memerlukan set.");
 export const sessionSchema = z
@@ -291,7 +292,8 @@ export function copyPreviousSets(workout: Workout, previous: Workout): Workout {
 }
 
 export function cardioMinutes(w: Workout) { return w.exercises.reduce((sum,e)=>sum+(isCardio(e.exercise)&&e.cardio?.done?Number(e.cardio.durationMinutes):0),0); }
-export function completedEntries(w: Workout) { return completedSets(w)+w.exercises.filter(e=>isCardio(e.exercise)&&e.cardio?.done).length; }
+export function completedEntries(w: Workout) { return completedSets(w)+w.exercises.filter(e=>isCardio(e.exercise)&&e.cardio?.done&&!e.cardio.skipped).length; }
+export function recordedEntries(w: Workout) { return completedSets(w)+w.exercises.filter(e=>isCardio(e.exercise)&&e.cardio?.done).length; }
 export function totalEntries(w: Workout) { return w.exercises.reduce((sum,e)=>sum+(isCardio(e.exercise)?1:e.sets.length),0); }
 
 export function exerciseComplete(entry: Workout['exercises'][number]) {
@@ -303,7 +305,7 @@ export function workoutComplete(workout: Workout) {
   return workout.exercises.length > 0 && workout.exercises.every(exerciseComplete);
 }
 export function finishWorkout(data: Data, workout: Workout): Data {
-  if (!completedEntries(workout)) return data;
+  if (!recordedEntries(workout)) return data;
   return {...data, draft: null, sessions: [
     {...workout, finished: true},
     ...data.sessions.filter(session => session.id !== workout.id),

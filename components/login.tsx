@@ -49,6 +49,7 @@ export default function Login({ready,register=false}:{ready:boolean;register?:bo
  {register&&<label>{tr("Konfirmasi password")}<input name="confirmPassword" type="password" autoComplete="new-password" minLength={8} maxLength={128} required/><small>{tr("Gunakan minimal 8 karakter.")}</small></label>}
  <button className="primary" disabled={!ready||pending} type="submit">{tr(pending?'Memproses…':register?'Daftar akun':'Masuk')} <ArrowUpRight size={19}/></button>
  </form>
+ {!register&&!pending&&<Link className="text-button" href="/forgot-password">{tr('Lupa kata sandi?')}</Link>}
  {!pending && <Link className="text-button" href={register?'/login':'/register'}>{tr(register?'Sudah punya akun? Masuk':'Belum punya akun? Daftar')}</Link>}
  {!ready&&<p className="notice">{tr("Login online belum diaktifkan. Kamu bisa mencoba pratinjau.")}</p>}
  {tr(notice&&<p role="alert" className="error">{tr(notice)}</p>)}{tr(message&&<p role="status" className="notice">{tr(message)}</p>)}

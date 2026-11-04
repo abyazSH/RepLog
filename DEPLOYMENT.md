@@ -33,6 +33,11 @@ Pastikan Authentication > URL Configuration menggunakan domain produksi yang sam
 
 - Site URL: `https://rep-log-gamma.vercel.app`
 - Redirect URL: `https://rep-log-gamma.vercel.app/auth/callback`
+- Redirect URL pemulihan password: `https://rep-log-gamma.vercel.app/auth/recovery`
+
+Untuk pengujian lokal, tambahkan juga `http://127.0.0.1:3000/auth/recovery` (atau origin lokal yang digunakan) ke daftar Redirect URLs. Pastikan template **Reset Password** tetap menggunakan `{{ .ConfirmationURL }}` agar Supabase memverifikasi token sebelum mengarahkan browser ke callback PKCE. Gunakan SMTP produksi untuk pengiriman email yang andal; layanan bawaan Supabase memiliki batas pengiriman yang ketat.
+
+Uji pemulihan melalui **Login > Lupa kata sandi?**: kirim email, buka tautan di browser yang sama, simpan password baru, lalu pastikan login dengan password baru berhasil dan password lama ditolak. Uji pula tautan kedaluwarsa/terpakai dan konfirmasi password yang berbeda. Respons pengiriman tidak mengungkap apakah suatu email terdaftar. Halaman pemulihan tidak memakai guest guard agar sesi dari tautan email tidak langsung dialihkan ke dashboard.
 
 Sebelum deploy pembaruan pengelolaan program, jalankan isi `supabase/migrations/003_custom_programs.sql` di Supabase SQL Editor. Migrasi ini dapat dijalankan ulang dan memungkinkan daftar program kosong. Data lama, RLS, pemeriksaan akun, dan perlindungan konflik penyimpanan tetap dipertahankan.
 

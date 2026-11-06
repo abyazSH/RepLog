@@ -28,7 +28,7 @@ import {
   Plus,
   Save,
   Settings2,
-  ShieldCheck,
+
   Target,
   Trash2,
   TrendingUp,
@@ -276,8 +276,7 @@ export default function Tracker({
             <Dumbbell />
           </span>{tr(" rep")}<span>{tr("log")}</span>
         </a>
-        <p className="nav-caption">{tr("RUANG LATIHAN")}</p>
-        <nav>
+        <nav aria-label={en ? "Main navigation" : "Navigasi utama"}>
           {nav.map(({ label, icon: Icon }) => (
             <Link
               key={label}
@@ -291,21 +290,9 @@ export default function Tracker({
             </Link>
           ))}
         </nav>
-        <div className="side-note">
-          <div className="mini-icon">
-            <Target size={20} />
-          </div>
-          <strong>{tr("Satu set lebih dekat.")}</strong>
-          <p>{tr(" Catat usahamu. ")}<br />{tr(" Bangun konsistensimu. ")}</p>
-          <span>{tr("YOUR PACE. YOUR PROGRESS.")}</span>
-        </div>
         <div className="side-user">
           <div className="avatar">{tr(displayName.slice(0, 1).toUpperCase())}</div>
-          <div>
-            <strong>{tr(displayName.split(" ")[0])}</strong>
-            <small>{tr("Akun pribadi")}</small>
-          </div>
-          <ShieldCheck size={18} />
+          <strong>{tr(displayName.split(" ")[0])}</strong>
         </div>
       </aside>
       <div className="main-shell">

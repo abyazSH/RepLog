@@ -22,28 +22,35 @@ export default function ShareCard({workout,onClose,sample=false}:{workout:Workou
   const summary=shareSummary(workout);
   const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=format==='story'?1920:1080;
   const ctx=canvas.getContext('2d');if(!ctx){setMessage(en?'Image preview is unavailable.':'Pratinjau gambar tidak tersedia.');return;}
+  const isLight=typeof document!=='undefined'&&document.documentElement.dataset.theme==='light';
+  const accent=isLight?'#2C99D6':'#DBFF00';
+  const textBase=isLight?'#0F172A':'#F7FAFC';
+  const mutedBase=isLight?'#64748B':'#8EABC2';
+  const bgStart=isLight?'#EBF5FB':'#163852';
+  const bgEnd=isLight?'#F8FAFC':'#102C40';
+  const strokeColor=isLight?'#CBD5E1':'#235275';
   const W=canvas.width,H=canvas.height,pad=80;
-  const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#253221');bg.addColorStop(1,'#0f1510');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='#36452d';ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(W+100,0,300+i*100,0,Math.PI*2);ctx.stroke();}
-  function text(value:string,y:number,size=32,color='#eff4e9',weight=500){ctx!.font=`${weight} ${size}px Arial, sans-serif`;ctx!.fillStyle=color;ctx!.fillText(value,pad,y,W-pad*2);}
+  const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,bgStart);bg.addColorStop(1,bgEnd);ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=strokeColor;ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(W+100,0,300+i*100,0,Math.PI*2);ctx.stroke();}
+  function text(value:string,y:number,size=32,color=textBase,weight=500){ctx!.font=`${weight} ${size}px Arial, sans-serif`;ctx!.fillStyle=color;ctx!.fillText(value,pad,y,W-pad*2);}
   function fit(value:string,y:number,size:number,color:string){while(size>24){ctx!.font=`800 ${size}px Arial, sans-serif`;if(ctx!.measureText(value).width<=W-pad*2)break;size-=2;}text(value,y,size,color,800);}
   const tall=format==='story';const start=tall?350:240;
-  text('replog',130,54,'#c7f76b',800);
-  text(sample?(en?'DEMO · SAMPLE WORKOUT':'DEMO · CONTOH LATIHAN'):(en?'WORKOUT COMPLETE':'LATIHAN SELESAI'),start-65,25,'#c7f76b',700);
-  fit(summary.name,start+20,tall?98:78,'#f6f8ef');
-  text(new Date(summary.date).toLocaleDateString(locale,{day:'numeric',month:'long',year:'numeric'}),start+80,30,'#b7c1ac');
+  text('replog',130,54,accent,800);
+  text(sample?(en?'DEMO · SAMPLE WORKOUT':'DEMO · CONTOH LATIHAN'):(en?'WORKOUT COMPLETE':'LATIHAN SELESAI'),start-65,25,accent,700);
+  fit(summary.name,start+20,tall?98:78,textBase);
+  text(new Date(summary.date).toLocaleDateString(locale,{day:'numeric',month:'long',year:'numeric'}),start+80,30,mutedBase);
   const y=start+180;
-  ctx.fillStyle='#ffffff09';ctx.fillRect(pad,y,W-pad*2,160);
-  text(`${summary.exerciseCount}`,y+70,55,'#c7f76b',800);text(en?'EXERCISES':'GERAKAN',y+118,23,'#b7c1ac');
-  ctx.font='800 55px Arial, sans-serif';ctx.fillStyle='#c7f76b';ctx.fillText(summary.setCount ? String(summary.setCount) : fmt(summary.cardioMinutes),570,y+70);
-  ctx.font='500 23px Arial, sans-serif';ctx.fillStyle='#b7c1ac';ctx.fillText(summary.setCount ? (en?'COMPLETED SETS':'SET SELESAI') : (en?'CARDIO MINUTES':'MENIT KARDIO'),570,y+118);
+  ctx.fillStyle=isLight?'#0f172a08':'#ffffff09';ctx.fillRect(pad,y,W-pad*2,160);
+  text(`${summary.exerciseCount}`,y+70,55,accent,800);text(en?'EXERCISES':'GERAKAN',y+118,23,mutedBase);
+  ctx.font='800 55px Arial, sans-serif';ctx.fillStyle=accent;ctx.fillText(summary.setCount ? String(summary.setCount) : fmt(summary.cardioMinutes),570,y+70);
+  ctx.font='500 23px Arial, sans-serif';ctx.fillStyle=mutedBase;ctx.fillText(summary.setCount ? (en?'COMPLETED SETS':'SET SELESAI') : (en?'CARDIO MINUTES':'MENIT KARDIO'),570,y+118);
   let cursor=y+235;
-  if(showVolume){text(summary.setCount ? `${fmt(summary.volume)} kg${summary.cardioMinutes ? ` · ${fmt(summary.cardioMinutes)} min` : ""}` : `${fmt(summary.cardioMinutes)} min`,cursor,48,'#f6f8ef',800);text(summary.setCount ? (summary.cardioMinutes ? (en?'STRENGTH VOLUME · CARDIO DURATION':'VOLUME BEBAN · DURASI KARDIO') : (en?'VOLUME · WEIGHT × REPS':'VOLUME · BEBAN × REPETISI')) : (en?'CARDIO DURATION':'DURASI KARDIO'),cursor+44,23,'#b7c1ac');cursor+=130;}
-  if(showExercises){for(const exercise of summary.exercises.slice(0,tall?6:2)){text(`${exercise.name} · ${exercise.cardioMinutes ? fmt(exercise.cardioMinutes)+" min" : exercise.setCount+" "+(en?"sets":"set")}`,cursor,29,'#d8e1d0');cursor+=52;}
-   const extra=summary.exerciseCount-(tall?6:2);if(extra>0)text(en?`+ ${extra} more exercises`:`+ ${extra} gerakan lainnya`,cursor,25,'#a8b49a');}
-  ctx.fillStyle='#c7f76b';ctx.fillRect(pad,H-180,64,6);
-  text(en?'ONE SET CLOSER.':'SATU SET LEBIH DEKAT.',H-112,30,'#c7f76b',800);
-  text(en?'Logged with RepLog':'Dicatat dengan RepLog',H-60,22,'#a8b49a');
+  if(showVolume){text(summary.setCount ? `${fmt(summary.volume)} kg${summary.cardioMinutes ? ` · ${fmt(summary.cardioMinutes)} min` : ""}` : `${fmt(summary.cardioMinutes)} min`,cursor,48,textBase,800);text(summary.setCount ? (summary.cardioMinutes ? (en?'STRENGTH VOLUME · CARDIO DURATION':'VOLUME BEBAN · DURASI KARDIO') : (en?'VOLUME · WEIGHT × REPS':'VOLUME · BEBAN × REPETISI')) : (en?'CARDIO DURATION':'DURASI KARDIO'),cursor+44,23,mutedBase);cursor+=130;}
+  if(showExercises){for(const exercise of summary.exercises.slice(0,tall?6:2)){text(`${exercise.name} · ${exercise.cardioMinutes ? fmt(exercise.cardioMinutes)+" min" : exercise.setCount+" "+(en?"sets":"set")}`,cursor,29,textBase);cursor+=52;}
+   const extra=summary.exerciseCount-(tall?6:2);if(extra>0)text(en?`+ ${extra} more exercises`:`+ ${extra} gerakan lainnya`,cursor,25,mutedBase);}
+  ctx.fillStyle=accent;ctx.fillRect(pad,H-180,64,6);
+  text(en?'ONE SET CLOSER.':'SATU SET LEBIH DEKAT.',H-112,30,accent,800);
+  text(en?'Logged with RepLog':'Dicatat dengan RepLog',H-60,22,mutedBase);
   canvas.toBlob(blob=>{if(!active)return;if(!blob){setMessage(en?'Could not create the image.':'Gambar belum dapat dibuat.');return;}url=URL.createObjectURL(blob);setPreview(url);setFile(new File([blob],`replog-${format}-${new Date(workout.date).toISOString().slice(0,10)}.png`,{type:'image/png'}));},'image/png');
   return()=>{active=false;if(url)URL.revokeObjectURL(url);};
  },[workout,format,showVolume,showExercises,language]);

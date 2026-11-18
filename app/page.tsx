@@ -28,7 +28,7 @@ export default function Page() {
           <div className="landing-set"><span>{tr("SET 01")}</span><b>{tr("30 kg × 12")}</b><Check size={19}/></div>
           <div className="landing-set"><span>{tr("SET 02")}</span><b>{tr("30 kg × 10")}</b><Check size={19}/></div>
           <div className="landing-set"><span>{tr("SET 03")}</span><b>{tr("30 kg × 10")}</b><Check size={19}/></div>
-          <div className="landing-mini-chart"><div><TrendingUp size={21}/><b>{tr("Sedikit demi sedikit.")}</b></div><svg viewBox="0 0 420 90" role="img" aria-label={tr("Ilustrasi perkembangan beban")}><path d="M5 80H415M5 45H415M5 10H415" stroke="#30342b" fill="none"/><path d="M10 75L88 62L166 62L244 43L322 30L410 10" stroke="#c7f76b" strokeWidth="4" fill="none"/><circle cx="410" cy="10" r="5" fill="#c7f76b"/></svg><small>{tr("Usaha yang tercatat, perkembangan yang terlihat.")}</small></div>
+          <div className="landing-mini-chart"><div><TrendingUp size={21}/><b>{tr("Sedikit demi sedikit.")}</b></div><svg viewBox="0 0 420 90" role="img" aria-label={tr("Ilustrasi perkembangan beban")}><path d="M5 80H415M5 45H415M5 10H415" stroke="var(--border)" fill="none"/><path d="M10 75L88 62L166 62L244 43L322 30L410 10" stroke="var(--accent)" strokeWidth="4" fill="none"/><circle cx="410" cy="10" r="5" fill="var(--accent)"/></svg><small>{tr("Usaha yang tercatat, perkembangan yang terlihat.")}</small></div>
         </div>
       </section>
       <section id="fitur" className="landing-features">

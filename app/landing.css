@@ -10,7 +10,7 @@
 .landing-copy > p { color: var(--muted); font-size: 1.08rem; line-height: 1.85; max-width: 490px; }
 .landing-actions { display: flex; flex-wrap: wrap; gap: 14px; margin: 30px 0 24px; }
 .landing-promise { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .82rem; }
-.landing-preview { padding: 30px; border: 1px solid #485238; border-radius: 24px; background: radial-gradient(ellipse at top right, #303d21 0%, var(--panel) 60%); box-shadow: 0 28px 75px #0004; }
+.landing-preview { padding: 30px; border: 1px solid var(--border); border-radius: 24px; background: radial-gradient(ellipse at top right, #194668 0%, var(--panel) 60%); box-shadow: 0 28px 75px #00000050; }
 .landing-preview-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }
 .landing-preview h2 { font-size: 2.2rem; letter-spacing: -.05em; margin-bottom: 6px; }
 .landing-sample { display: flex; justify-content: space-between; align-items: center; margin: 26px 0 14px; }
@@ -31,7 +31,7 @@
 .landing-feature-grid article > svg { color: var(--accent); margin-bottom: 26px; }
 .landing-feature-grid h3 { font-size: 1.1rem; margin-bottom: 12px; }
 .landing-feature-grid p, .landing-bottom p { color: var(--muted); line-height: 1.8; }
-.landing-bottom { display: flex; justify-content: space-between; align-items: center; gap: 30px; padding: 42px; background: var(--deep); border: 1px solid #485238; border-radius: 20px; }
+.landing-bottom { display: flex; justify-content: space-between; align-items: center; gap: 30px; padding: 42px; background: var(--deep); border: 1px solid var(--border); border-radius: 20px; }
 .landing-bottom p { margin-top: 12px; }
 .landing-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 36px 0; color: var(--muted); font-size: .85rem; }
 @media(max-width: 900px) { .landing { padding: 0 28px; } .landing-hero { gap: 30px; padding: 65px 0; } .landing-feature-grid { gap: 14px; } .landing-feature-grid article { padding: 22px; } }

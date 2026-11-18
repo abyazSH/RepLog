@@ -274,7 +274,7 @@ export default function Tracker({
         >
           <span className="brand-mark">
             <Dumbbell />
-          </span>{tr(" rep")}<span>{tr("log")}</span>
+          </span>{tr("rep")}<span>{tr("log")}</span>
         </a>
         <nav aria-label={en ? "Main navigation" : "Navigasi utama"}>
           {nav.map(({ label, icon: Icon }) => (
@@ -1110,8 +1110,8 @@ function Chart({ points, name, unit }: { points: { date: string; value: number; 
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#c7f76b" stopOpacity=".2" />
-            <stop offset="1" stopColor="#c7f76b" stopOpacity="0" />
+            <stop stopColor="var(--accent)" stopOpacity=".2" />
+            <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0, 1, 2, 3, 4].map((i) => (
@@ -1121,10 +1121,10 @@ function Chart({ points, name, unit }: { points: { date: string; value: number; 
               x2="380"
               y1={195 - i * 40}
               y2={195 - i * 40}
-              stroke="#30342c"
+              stroke="var(--border)"
               strokeDasharray="4 5"
             />
-            <text x="4" y={200 - i * 40} fill="#8c9488" fontSize="12">
+            <text x="4" y={200 - i * 40} fill="var(--muted)" fontSize="12">
               {new Intl.NumberFormat(locale,{maximumFractionDigits:1,notation:"compact"}).format((max*i)/4)}
             </text>
           </g>
@@ -1136,12 +1136,12 @@ function Chart({ points, name, unit }: { points: { date: string; value: number; 
         <polyline
           points={points.map((p, i) => `${x(i)},${y(p.value)}`).join(" ")}
           fill="none"
-          stroke="#c7f76b"
+          stroke="var(--accent)"
           strokeWidth="3"
         />
         {points.map((p, i) => (
           <g key={i}>
-            <circle cx={x(i)} cy={y(p.value)} r="5" fill="#c7f76b">
+            <circle cx={x(i)} cy={y(p.value)} r="5" fill="var(--accent)">
               <title>
                 {tr(dateLabel(p.date))}: {p.value} {unit}{p.status?` · ${p.status}`:""}</title>
             </circle>
